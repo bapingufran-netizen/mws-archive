@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>M.W.S | ADMIN LOGIN</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background: #fafafa; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .login-card { background: white; padding: 3rem; border-radius: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.05); width: 100%; max-width: 400px; }
+        input { border-bottom: 2px solid #f0f0f0; padding: 15px 0; outline: none; transition: 0.3s; width: 100%; font-weight: 700; margin-bottom: 2rem; }
+        input:focus { border-bottom-color: #000; }
+    </style>
+</head>
+<body>
+    <div class="login-card text-center">
+        <h1 class="text-[16px] font-bold tracking-[0.4em] mb-12 uppercase">M.W.S STUDIO</h1>
+        <input type="password" id="admin-pass" placeholder="ACCESS CODE / 管理口令">
+        <button onclick="attemptLogin()" class="w-full bg-black text-white py-4 rounded-2xl text-[12px] font-bold uppercase tracking-widest hover:scale-[1.02] transition-all">
+            Enter Studio
+        </button>
+        <p id="msg" class="text-red-500 text-[10px] mt-4 uppercase font-bold"></p>
+    </div>
+
+    <script>
+        function attemptLogin() {
+            const pass = document.getElementById('admin-pass').value;
+            // 这里设置你的管理口令，建议设置复杂一些
+            if (pass === 'MWS2026') { 
+                localStorage.setItem('mws_admin_token', 'AUTHORIZED_' + btoa(pass));
+                window.location.href = 'studio.html';
+            } else {
+                document.getElementById('msg').innerText = "Access Denied / 口令错误";
+            }
+        }
+    </script>
+</body>
+</html>
