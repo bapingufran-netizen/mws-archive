@@ -12,6 +12,15 @@
         .spec-btn:hover:not(.active) { border-color: #000; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #000; }
+        
+        /* 详情图画册感优化 */
+        .detail-img-flow img {
+            width: 100%;
+            height: auto;
+            margin-bottom: 2rem; /* 图片之间的呼吸感 */
+            display: block;
+            border-radius: 2px;
+        }
     </style>
 </head>
 <body class="bg-white">
@@ -24,13 +33,15 @@
         </div>
     </nav>
 
-    <main class="pt-32 max-w-[1200px] mx-auto px-8 flex gap-20 pb-20">
-        <div class="w-1/2 space-y-4">
-            <img id="main-display" class="w-full aspect-[3/4] object-cover bg-zinc-50 rounded-sm shadow-sm">
-            <div id="detail-images-container" class="space-y-4"></div>
+    <main class="pt-32 max-w-[1200px] mx-auto px-8 flex flex-col md:flex-row gap-20 pb-20">
+        <div class="w-full md:w-1/2 space-y-8">
+            <img id="main-display" class="w-full aspect-[3/4] object-cover bg-zinc-50 rounded-sm shadow-sm mb-12">
+            
+            <div id="detail-images-container" class="detail-img-flow">
+                </div>
         </div>
 
-        <div class="w-1/2 space-y-10 sticky top-32 h-fit">
+        <div class="w-full md:w-1/2 space-y-10 md:sticky md:top-32 h-fit">
             <div class="space-y-2">
                 <h1 id="p-name" class="text-3xl font-light tracking-tight text-black uppercase">Loading...</h1>
                 <p id="p-price" class="text-xl font-semibold">¥ --</p>
@@ -39,8 +50,7 @@
             <div class="space-y-8">
                 <div>
                     <label class="text-[9px] font-bold text-zinc-400 uppercase tracking-widest block mb-4">Select Variation / 选择规格</label>
-                    <div id="variation-options" class="flex flex-wrap gap-3">
-                        </div>
+                    <div id="variation-options" class="flex flex-wrap gap-3"></div>
                 </div>
 
                 <div class="pt-4">
@@ -52,8 +62,8 @@
             </div>
 
             <div class="pt-10 border-t">
-                <label class="text-[9px] font-bold text-zinc-400 uppercase tracking-widest block mb-4">Description / 详情说明</label>
-                <div id="p-desc" class="text-xs leading-relaxed text-zinc-600 whitespace-pre-wrap font-normal"></div>
+                <label class="text-[9px] font-bold text-zinc-400 uppercase tracking-widest block mb-4">Description / 档案描述</label>
+                <div id="p-desc" class="text-[13px] leading-relaxed text-zinc-600 whitespace-pre-wrap font-normal italic"></div>
             </div>
         </div>
     </main>
@@ -82,26 +92,37 @@
         };
 
         function renderProduct() {
-            // 基础信息渲染
+            // 1. 基础信息渲染
             document.getElementById('p-name').innerText = product.name;
             document.getElementById('p-price').innerText = `¥ ${product.price}`;
             document.getElementById('main-display').src = product.image;
             document.getElementById('p-desc').innerText = product.description || "Archive Item Details";
 
-            // 详情多图渲染
-            const detailImgs = JSON.parse(product.detail_images || '[]');
-            document.getElementById('detail-images-container').innerHTML = detailImgs.map(src => 
-                `<img src="${src}" class="w-full object-cover">`
-            ).join('');
+            // 2. 详情多图展示逻辑
+            const container = document.getElementById('detail-images-container');
+            try {
+                // 解码从 studio.html 发送过来的 JSON 字符串数组
+                const detailImgs = JSON.parse(product.detail_images || '[]');
+                if (detailImgs.length > 0) {
+                    container.innerHTML = detailImgs.map(src => 
+                        `<img src="${src}" class="animate__animated animate__fadeIn">`
+                    ).join('');
+                } else {
+                    container.innerHTML = ""; // 如果没有图，保持空白
+                }
+            } catch (e) {
+                console.warn("详情图解析失败，可能为老数据");
+                container.innerHTML = "";
+            }
 
-            // ✨ 核心逻辑：自动从 skus 字段生成按钮
+            // 3. 规格矩阵渲染 (保留原有逻辑)
             skuMatrix = JSON.parse(product.skus || '{}');
-            const container = document.getElementById('variation-options');
-            container.innerHTML = "";
+            const optionsContainer = document.getElementById('variation-options');
+            optionsContainer.innerHTML = "";
 
             const specs = Object.keys(skuMatrix);
             if (specs.length === 0) {
-                container.innerHTML = `<p class="text-[10px] text-red-400">无规格数据</p>`;
+                optionsContainer.innerHTML = `<p class="text-[10px] text-red-400 uppercase font-bold">Sold Out / 档案暂无规格</p>`;
                 return;
             }
 
@@ -110,7 +131,7 @@
                 btn.className = "spec-btn";
                 btn.innerText = specName;
                 btn.onclick = () => selectSpec(specName, btn);
-                container.appendChild(btn);
+                optionsContainer.appendChild(btn);
             });
         }
 
@@ -118,11 +139,9 @@
             selectedSpec = name;
             const variant = skuMatrix[name];
             
-            // 切换按钮高亮
             document.querySelectorAll('.spec-btn').forEach(b => b.classList.remove('active'));
             el.classList.add('active');
 
-            // 实时更新价格、库存和购买按钮状态
             const btn = document.getElementById('buy-btn');
             const hint = document.getElementById('stock-hint');
             const priceLabel = document.getElementById('p-price');
@@ -140,15 +159,8 @@
         }
 
         function handleBuy() {
-            if (!selectedSpec) {
-                alert("请先选择规格");
-                return;
-            }
-
-            // 获取选中的 SKU 编码
+            if (!selectedSpec) { alert("请先选择规格"); return; }
             const skuCode = skuMatrix[selectedSpec].sku;
-            
-            // 跳转至结算页面，传递商品ID、规格名和SKU编码
             const checkoutUrl = `checkout.html?pid=${productId}&spec=${encodeURIComponent(selectedSpec)}&sku=${skuCode}`;
             window.location.href = checkoutUrl;
         }
