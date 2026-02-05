@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>M.W.S | MEMBER REGISTER</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background: #fafafa; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        .register-card { background: white; padding: 3rem; border-radius: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.05); width: 100%; max-width: 400px; }
+        input { border-bottom: 2px solid #f0f0f0; padding: 15px 0; outline: none; transition: 0.3s; width: 100%; font-weight: 700; margin-bottom: 1.5rem; }
+        input:focus { border-bottom-color: #000; }
+    </style>
+</head>
+<body>
+    <div class="register-card animate__animated animate__fadeIn">
+        <h2 class="text-center bold-text uppercase tracking-widest mb-10 text-[14px]">Member Register</h2>
+        
+        <input type="text" id="reg-username" placeholder="USERNAME / 用户名">
+        <input type="email" id="reg-email" placeholder="EMAIL / 邮箱">
+        <input type="password" id="reg-password" placeholder="PASSWORD / 密码">
+        
+        <button onclick="handleRegister()" class="w-full bg-black text-white py-4 rounded-2xl text-[12px] font-bold uppercase tracking-widest hover:scale-[1.02] transition-all mt-4">
+            Create Account
+        </button>
+        
+        <p class="text-center text-[10px] mt-6 uppercase font-bold">
+            Already a member? <a href="index.html" class="underline">Sign In</a>
+        </p>
+    </div>
+
+    <script>
+        async function handleRegister() {
+            const username = document.getElementById('reg-username').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+
+            if(!username || !password) return alert("请填写完整信息");
+
+            const res = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, password })
+            });
+
+            const data = await res.json();
+            if(data.success) {
+                alert("注册成功！请登录。");
+                window.location.href = 'index.html'; // 注册成功回到首页登录
+            } else {
+                alert("注册失败: " + data.message);
+            }
+        }
+    </script>
+</body>
+</html>
