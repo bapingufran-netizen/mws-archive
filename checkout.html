@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>CHECKOUT | 订单结算</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+        body { font-family: 'Inter', sans-serif; background: #fafafa; color: #111; }
+        input { outline: none; transition: 0.2s; }
+        input:focus { border-color: #000; }
+    </style>
+</head>
+<body>
+    <div class="max-w-[1000px] mx-auto min-h-screen flex flex-col md:flex-row gap-12 p-8 md:p-20">
+        <div class="flex-1 space-y-8">
+            <h2 class="text-[10px] font-bold tracking-[3px] uppercase text-zinc-400">Order Summary / 订单预览</h2>
+            <div class="bg-white p-8 rounded-2xl border border-zinc-100 flex gap-6">
+                <img id="order-img" class="w-24 h-32 object-cover rounded-lg bg-zinc-50">
+                <div class="flex-1 space-y-1">
+                    <h3 id="order-name" class="font-bold text-lg uppercase tracking-tight text-zinc-400">Loading...</h3>
+                    <p id="order-spec" class="text-[10px] text-zinc-400 font-medium uppercase tracking-widest"></p>
+                    <p id="order-sku" class="text-[9px] text-zinc-300 font-mono"></p>
+                    <p id="order-price" class="pt-4 font-bold text-xl">¥ --</p>
+                </div>
+            </div>
+            <a href="javascript:history.back()" class="inline-block text-[10px] uppercase font-bold tracking-widest hover:underline">← 返回修改规格</a>
+        </div>
+
+        <div class="w-full md:w-[400px] space-y-8">
+            <h2 class="text-[10px] font-bold tracking-[3px] uppercase text-zinc-400">Contact Information / 联系人信息</h2>
+            <div class="bg-white p-10 rounded-2xl shadow-sm border border-zinc-100 space-y-6">
+                <div>
+                    <label class="text-[9px] font-bold text-zinc-400 uppercase tracking-widest block mb-2">姓名 / Name</label>
+                    <input id="c-name" type="text" class="w-full border-b border-zinc-100 py-3 text-sm" placeholder="请输入收货人姓名">
+                </div>
+                <div>
+                    <label class="text-[9px] font-bold text-zinc-400 uppercase tracking-widest block mb-2">电话 / Phone</label>
+                    <input id="c-phone" type="tel" class="w-full border-b border-zinc-100 py-3 text-sm" placeholder="请输入联系电话">
+                </div>
+                <div>
+                    <label class="text-[9px] font-bold text-zinc-400 uppercase tracking-widest block mb-2">收货地址 / Shipping Address</label>
+                    <input id="c-address" type="text" class="w-full border-b border-zinc-100 py-3 text-sm" placeholder="请输入详细收货地址">
+                </div>
+                <button id="submit-btn" onclick="confirmOrder()" class="w-full bg-black text-white py-5 mt-4 text-[11px] font-bold uppercase tracking-[0.3em] shadow-xl hover:bg-zinc-800 transition-all">
+                    Complete Purchase / 确认下单
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取 URL 传参
+        const params = new URLSearchParams(window.location.search);
+        const pid = params.get('pid');
+        const spec = params.get('spec');
+
+        let currentProduct = null;
+        let currentVariant = null;
+
+        window.onload = async () => {
+            if (!pid || !spec) { alert("订单信息无效"); location.href='index.html'; return; }
+
+            try {
+                const res = await fetch('/api/products');
+                const data = await res.json();
+                currentProduct = data.find(p => p.id == pid);
+                
+                if (currentProduct) {
+                    const skus = JSON.parse(currentProduct.skus || '{}');
+                    currentVariant = skus[spec];
+
+                    if (!currentVariant) {
+                        alert("所选规格已下架");
+                        history.back();
+                        return;
+                    }
+
+                    document.getElementById('order-img').src = currentProduct.image;
+                    document.getElementById('order-name').innerText = currentProduct.name;
+                    document.getElementById('order-name').classList.remove('text-zinc-400');
+                    document.getElementById('order-spec').innerText = `Selected: ${spec}`;
+                    document.getElementById('order-sku').innerText = `Code: ${currentVariant.sku}`;
+                    document.getElementById('order-price').innerText = `¥ ${currentVariant.price}`;
+                }
+            } catch (e) {
+                alert("加载商品数据失败");
+            }
+        };
+
+        async function confirmOrder() {
+            const name = document.getElementById('c-name').value.trim();
+            const phone = document.getElementById('c-phone').value.trim();
+            const address = document.getElementById('c-address').value.trim();
+            const btn = document.getElementById('submit-btn');
+
+            if (!name || !phone || !address) { alert("请完善收货信息"); return; }
+
+            // 禁用按钮防止重复点击
+            btn.disabled = true;
+            btn.innerText = "PROCESSING...";
+
+            const payload = {
+                productId: pid,
+                specKey: spec,
+                quantity: 1,
+                customerName: name,
+                phone: phone,
+                address: address
+            };
+
+            try {
+                const res = await fetch('/api/buy', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                const result = await res.json();
+
+                if (result.success) {
+                    // ✨ 修改处：增加支付引导弹窗并跳转到 payUrl
+                    alert(`下单成功！\n订单编号: ${result.sku || '已生成'}\n即将进入支付页面，请准备好扫码。`);
+                    
+                    if (result.payUrl) {
+                        window.location.href = result.payUrl;
+                    } else {
+                        // 备用方案：如果后端没传 payUrl，带上金额跳转
+                        window.location.href = `pay.html?amount=${currentVariant.price}&orderId=${result.orderId}`;
+                    }
+                } else {
+                    alert("下单失败: " + result.msg);
+                    btn.disabled = false;
+                    btn.innerText = "Complete Purchase / 确认下单";
+                }
+            } catch (e) { 
+                alert("网络异常，请检查服务器连接"); 
+                btn.disabled = false;
+                btn.innerText = "Complete Purchase / 确认下单";
+            }
+        }
+    </script>
+</body>
+</html>

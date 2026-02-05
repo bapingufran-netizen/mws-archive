@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>M.W.S STUDIO | 档案管理系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background: #fff; color: #000; }
+        
+        /* 字体强化：大且粗，确保清晰度 */
+        .bold-text { font-weight: 700 !important; letter-spacing: 0.1em; }
+        input, select, textarea { font-size: 14px !important; font-weight: 700 !important; }
+        
+        .studio-input { 
+            border-bottom: 2px solid #f0f0f0; padding: 15px 0; outline: none; 
+            transition: 0.3s; width: 100%; background: transparent;
+        }
+        .studio-input:focus { border-bottom-color: #000; }
+        
+        /* 尺码颜色按钮样式 */
+        .spec-tag {
+            padding: 10px 25px; border: 2px solid #f0f0f0; border-radius: 50px;
+            font-size: 12px; font-weight: 700; cursor: pointer; transition: 0.3s;
+            text-transform: uppercase; display: inline-block; margin-right: 10px; margin-bottom: 10px;
+        }
+        .spec-tag.active { background: #000; color: #fff; border-color: #000; }
+
+        ::-webkit-scrollbar { width: 0px; }
+        .inventory-scroll { height: calc(100vh - 300px); overflow-y: auto; }
+        .main-card { background: #fff; border-radius: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.03); }
+    </style>
+</head>
+<body class="overflow-hidden bg-[#fafafa]">
+
+    <div class="flex h-screen">
+        <aside class="w-80 border-r border-zinc-100 flex flex-col p-8 bg-white">
+            <div class="mb-12">
+                <h1 class="text-[16px] bold-text tracking-[0.4em] mb-2 uppercase">M.W.S STUDIO</h1>
+                <p class="text-[10px] text-zinc-300 font-bold uppercase tracking-widest">Archive Management</p>
+            </div>
+
+            <div class="flex-1 min-h-0">
+                <div class="flex justify-between items-center mb-6 border-b pb-4">
+                    <span class="text-[11px] bold-text uppercase tracking-widest">Inventory / 库存档案</span>
+                    <button onclick="location.reload()" class="text-xl hover:rotate-90 transition">＋</button>
+                </div>
+                <div id="inventory-list" class="inventory-scroll space-y-4"></div>
+            </div>
+        </aside>
+
+        <main class="flex-1 overflow-y-auto p-12">
+            <div class="max-w-6xl mx-auto space-y-12">
+                
+                <div class="main-card p-12 space-y-12 animate__animated animate__fadeIn">
+                    <section class="grid grid-cols-1 lg:grid-cols-2 gap-16">
+                        <div id="drop-zone" class="aspect-[3/4] bg-zinc-50 rounded-[2.5rem] border-4 border-dashed border-zinc-100 flex flex-col items-center justify-center cursor-pointer relative overflow-hidden group hover:border-black transition-all">
+                            <img id="main-preview" class="hidden w-full h-full object-cover">
+                            <div id="placeholder" class="text-center">
+                                <div class="text-4xl mb-4 text-zinc-200">↑</div>
+                                <p class="text-[12px] bold-text text-zinc-400 uppercase tracking-widest">Upload Main Image</p>
+                            </div>
+                            <input type="file" id="main-file" hidden onchange="handleMainUpload(this)">
+                        </div>
+
+                        <div class="flex flex-col justify-center space-y-10">
+                            <div class="space-y-2">
+                                <label class="text-[11px] bold-text text-zinc-400 uppercase tracking-widest">Item Name / 档案名称</label>
+                                <input type="text" id="p-name" class="studio-input text-[18px]" placeholder="请输入品名...">
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-8">
+                                <div class="space-y-2">
+                                    <label class="text-[11px] bold-text text-zinc-400 uppercase tracking-widest">Global Price / 全局定价 (¥)</label>
+                                    <input type="number" id="p-price" class="studio-input" placeholder="0.00" oninput="syncAllPrices(this.value)">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[11px] bold-text text-zinc-400 uppercase tracking-widest">Series / 系列分类</label>
+                                    <select id="p-category" class="studio-input">
+                                        <option value="Silk Series">Silk Series / 真丝系列</option>
+                                        <option value="Atelier">Atelier / 重磅成衣</option>
+                                        <option value="Archive">Archive / 品牌档案</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="text-[11px] bold-text text-zinc-400 uppercase tracking-widest">Archive Description / 档案文字描述</label>
+                                <textarea id="p-desc" class="studio-input h-32 resize-none" placeholder="输入灵感来源、材质细节说明..."></textarea>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="border-t pt-12 space-y-10">
+                        <div class="flex justify-between items-end">
+                            <div class="space-y-1">
+                                <h3 class="text-[14px] bold-text uppercase tracking-widest">Matrix / 规格矩阵管理</h3>
+                                <p class="text-[10px] text-zinc-400 font-bold">先输入规格（如 S,M,L）点击生成标签，再点击标签生成下方输入框矩阵</p>
+                            </div>
+                            <div class="flex gap-4">
+                                <input type="text" id="attr-input" placeholder="规格值 (以逗号分隔)" class="border-b-2 border-zinc-100 outline-none px-4 py-2 font-bold w-64">
+                                <button onclick="buildTags()" class="bg-zinc-100 px-6 py-2 rounded-full text-[10px] bold-text uppercase">生成标签</button>
+                            </div>
+                        </div>
+
+                        <div id="tags-area" class="min-h-[50px] bg-zinc-50/50 p-6 rounded-3xl">
+                            <p class="text-[10px] text-zinc-300 italic">等待生成规格标签按钮...</p>
+                        </div>
+
+                        <div class="flex items-center gap-10 bg-black text-white p-6 rounded-3xl shadow-xl">
+                            <div class="text-[11px] bold-text uppercase tracking-widest">Global Adjust / 一键调整 :</div>
+                            <div class="flex gap-6">
+                                <input type="number" id="batch-stock" placeholder="统一库存" class="bg-zinc-800 rounded-lg px-4 py-2 w-32 outline-none text-white font-bold">
+                                <button onclick="applyBatch('stock')" class="text-[10px] bold-text bg-white text-black px-4 py-2 rounded-lg">应用库存</button>
+                            </div>
+                            <div class="flex gap-6 border-l border-zinc-700 pl-6">
+                                <input type="text" id="batch-code" placeholder="统一编码前缀" class="bg-zinc-800 rounded-lg px-4 py-2 w-40 outline-none text-white font-bold">
+                                <button onclick="applyBatch('sku')" class="text-[10px] bold-text bg-white text-black px-4 py-2 rounded-lg">应用编码</button>
+                            </div>
+                        </div>
+
+                        <table class="w-full">
+                            <thead>
+                                <tr class="text-[12px] bold-text text-zinc-400 uppercase text-left border-b pb-4">
+                                    <th class="pb-4">Variant / 规格</th>
+                                    <th class="pb-4">Price / 价格 (¥)</th>
+                                    <th class="pb-4">Stock / 库存</th>
+                                    <th class="pb-4">SKU / 商家编码</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sku-body"></tbody>
+                        </table>
+                    </section>
+
+                    <button onclick="submitProduct()" id="publish-btn" class="w-full bg-black text-white py-10 rounded-3xl text-[16px] bold-text uppercase tracking-[0.8em] shadow-2xl hover:scale-[1.01] transition-all">
+                        Confirm & Publish Archive
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let mainImgBase64 = "";
+        let skuMatrix = {}; // 存储当前所有规格详细数据
+        let activeSpecs = []; // 当前选中的规格按钮列表
+        let currentEditId = null;
+
+        window.onload = () => {
+            refreshInventory(); // 加载左侧列表
+            document.getElementById('drop-zone').onclick = () => document.getElementById('main-file').click();
+        };
+
+        // 1. 图片上传
+        function handleMainUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                mainImgBase64 = e.target.result;
+                const prev = document.getElementById('main-preview');
+                prev.src = mainImgBase64;
+                prev.classList.remove('hidden');
+                document.getElementById('placeholder').classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 2. 生成 Amazon 风格按钮
+        function buildTags() {
+            const val = document.getElementById('attr-input').value;
+            const tagsArr = val.split(',').map(v => v.trim()).filter(v => v);
+            const area = document.getElementById('tags-area');
+            area.innerHTML = "";
+            
+            tagsArr.forEach(t => {
+                const span = document.createElement('div');
+                span.className = "spec-tag";
+                span.innerText = t;
+                span.onclick = () => toggleSpec(t, span);
+                area.appendChild(span);
+            });
+        }
+
+        // 3. 点击按钮切换规格
+        function toggleSpec(name, element) {
+            if (activeSpecs.includes(name)) {
+                activeSpecs = activeSpecs.filter(s => s !== name);
+                element.classList.remove('active');
+            } else {
+                activeSpecs.push(name);
+                element.classList.add('active');
+            }
+            renderMatrix(); // 实时渲染输入框
+        }
+
+        // 4. 渲染矩阵输入框
+        function renderMatrix() {
+            const tbody = document.getElementById('sku-body');
+            const globalPrice = document.getElementById('p-price').value || 0;
+            tbody.innerHTML = "";
+
+            activeSpecs.forEach(spec => {
+                // 如果是新选中的，则初始化数据
+                if (!skuMatrix[spec]) {
+                    skuMatrix[spec] = { price: globalPrice, stock: 99, sku: `MWS-${spec.toUpperCase()}` };
+                }
+
+                const row = document.createElement('tr');
+                row.className = "border-b border-zinc-50";
+                row.innerHTML = `
+                    <td class="py-6 text-[14px] bold-text uppercase">${spec}</td>
+                    <td><input type="number" class="w-full bg-zinc-50 p-4 rounded-xl font-bold" value="${skuMatrix[spec].price}" oninput="skuMatrix['${spec}'].price = this.value"></td>
+                    <td><input type="number" class="w-full bg-zinc-50 p-4 rounded-xl font-bold" value="${skuMatrix[spec].stock}" oninput="skuMatrix['${spec}'].stock = this.value"></td>
+                    <td><input type="text" class="w-full bg-zinc-50 p-4 rounded-xl font-bold font-mono" value="${skuMatrix[spec].sku}" oninput="skuMatrix['${spec}'].sku = this.value"></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // 5. 一键同步与批量调整
+        function syncAllPrices(val) {
+            activeSpecs.forEach(spec => {
+                if(skuMatrix[spec]) skuMatrix[spec].price = val;
+            });
+            renderMatrix();
+        }
+
+        function applyBatch(type) {
+            const val = document.getElementById(`batch-${type}`).value;
+            if (!val) return alert("请输入数值");
+            
+            activeSpecs.forEach(spec => {
+                if (type === 'sku') {
+                    skuMatrix[spec].sku = `${val}-${spec.toUpperCase()}`;
+                } else {
+                    skuMatrix[spec][type] = val;
+                }
+            });
+            renderMatrix();
+            alert("全局同步成功");
+        }
+
+        // 6. 提交数据 (保持 server.js 接口打通)
+        async function submitProduct() {
+            const payload = {
+                id: currentEditId,
+                name: document.getElementById('p-name').value,
+                price: parseFloat(document.getElementById('p-price').value) || 0,
+                image: mainImgBase64,
+                category: document.getElementById('p-category').value,
+                description: document.getElementById('p-desc').value, // 文字描述保存
+                skus: JSON.stringify(skuMatrix),
+                detail_images: JSON.stringify([])
+            };
+
+            if(!payload.name || !payload.image || activeSpecs.length === 0) {
+                return alert("❌ 必须包含品名、图片和至少一个规格");
+            }
+
+            const res = await fetch('/api/products', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if(data.success) {
+                alert("✅ 档案操作成功");
+                location.reload();
+            }
+        }
+
+        // 7. 库存列表联动回显
+        async function refreshInventory() {
+            const res = await fetch('/api/products');
+            const products = await res.json();
+            const list = document.getElementById('inventory-list');
+            list.innerHTML = products.map(p => `
+                <div onclick="loadToEditor(${p.id})" class="flex items-center gap-4 p-4 bg-zinc-50 rounded-3xl cursor-pointer hover:bg-black hover:text-white transition-all group">
+                    <img src="${p.image}" class="w-12 h-16 object-cover rounded-xl">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[12px] bold-text uppercase truncate">${p.name}</p>
+                        <p class="text-[10px] opacity-50 font-bold">¥ ${p.price}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadToEditor(id) {
+            const res = await fetch('/api/products');
+            const products = await res.json();
+            const item = products.find(p => p.id === id);
+            if (!item) return;
+
+            currentEditId = id;
+            document.getElementById('p-name').value = item.name;
+            document.getElementById('p-price').value = item.price;
+            document.getElementById('p-category').value = item.category;
+            document.getElementById('p-desc').value = item.description; // 描述回显
+            
+            mainImgBase64 = item.image;
+            document.getElementById('main-preview').src = item.image;
+            document.getElementById('main-preview').classList.remove('hidden');
+            document.getElementById('placeholder').classList.add('hidden');
+
+            // 规格还原
+            skuMatrix = JSON.parse(item.skus || '{}');
+            activeSpecs = Object.keys(skuMatrix);
+            
+            // 还原按钮
+            const area = document.getElementById('tags-area');
+            area.innerHTML = "";
+            activeSpecs.forEach(t => {
+                const span = document.createElement('div');
+                span.className = "spec-tag active";
+                span.innerText = t;
+                span.onclick = () => toggleSpec(t, span);
+                area.appendChild(span);
+            });
+            renderMatrix();
+            document.getElementById('publish-btn').innerText = "UPDATE CURRENT ARCHIVE";
+        }
+    </script>
+</body>
+</html>

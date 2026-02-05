@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>M.W.S ARCHIVE | 商品详情</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+        body { font-family: 'Inter', sans-serif; color: #111; }
+        .spec-btn { border: 1px solid #eee; padding: 12px 24px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+        .spec-btn.active { background: #000; color: #fff; border-color: #000; }
+        .spec-btn:hover:not(.active) { border-color: #000; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #000; }
+    </style>
+</head>
+<body class="bg-white">
+
+    <nav class="p-8 flex justify-between items-center fixed w-full bg-white/80 backdrop-blur-md z-50">
+        <div class="font-bold tracking-widest text-xs uppercase">M.W.S ARCHIVE</div>
+        <div class="flex gap-8 text-[10px] uppercase font-semibold">
+            <a href="index.html" class="hover:underline">Back to Home</a>
+            <a href="studio.html" class="text-zinc-400">Studio</a>
+        </div>
+    </nav>
+
+    <main class="pt-32 max-w-[1200px] mx-auto px-8 flex gap-20 pb-20">
+        <div class="w-1/2 space-y-4">
+            <img id="main-display" class="w-full aspect-[3/4] object-cover bg-zinc-50 rounded-sm shadow-sm">
+            <div id="detail-images-container" class="space-y-4"></div>
+        </div>
+
+        <div class="w-1/2 space-y-10 sticky top-32 h-fit">
+            <div class="space-y-2">
+                <h1 id="p-name" class="text-3xl font-light tracking-tight text-black uppercase">Loading...</h1>
+                <p id="p-price" class="text-xl font-semibold">¥ --</p>
+            </div>
+
+            <div class="space-y-8">
+                <div>
+                    <label class="text-[9px] font-bold text-zinc-400 uppercase tracking-widest block mb-4">Select Variation / 选择规格</label>
+                    <div id="variation-options" class="flex flex-wrap gap-3">
+                        </div>
+                </div>
+
+                <div class="pt-4">
+                    <button id="buy-btn" onclick="handleBuy()" disabled class="w-full bg-black text-white py-5 text-[11px] font-bold uppercase tracking-[0.3em] disabled:bg-zinc-100 disabled:text-zinc-400 transition-all shadow-lg active:scale-[0.98]">
+                        Select Options / 请选择规格
+                    </button>
+                    <p id="stock-hint" class="text-[10px] text-zinc-500 mt-4 text-center uppercase tracking-widest font-medium"></p>
+                </div>
+            </div>
+
+            <div class="pt-10 border-t">
+                <label class="text-[9px] font-bold text-zinc-400 uppercase tracking-widest block mb-4">Description / 详情说明</label>
+                <div id="p-desc" class="text-xs leading-relaxed text-zinc-600 whitespace-pre-wrap font-normal"></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let product = null;
+        let skuMatrix = {};
+        let selectedSpec = null;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const productId = urlParams.get('id');
+
+        window.onload = async () => {
+            if (!productId) { alert("未找到商品ID"); return; }
+            
+            try {
+                const res = await fetch(`/api/products`);
+                const allProducts = await res.json();
+                product = allProducts.find(p => p.id == productId);
+
+                if (!product) { alert("商品已下架"); return; }
+                renderProduct();
+            } catch (err) {
+                console.error("加载失败:", err);
+            }
+        };
+
+        function renderProduct() {
+            // 基础信息渲染
+            document.getElementById('p-name').innerText = product.name;
+            document.getElementById('p-price').innerText = `¥ ${product.price}`;
+            document.getElementById('main-display').src = product.image;
+            document.getElementById('p-desc').innerText = product.description || "Archive Item Details";
+
+            // 详情多图渲染
+            const detailImgs = JSON.parse(product.detail_images || '[]');
+            document.getElementById('detail-images-container').innerHTML = detailImgs.map(src => 
+                `<img src="${src}" class="w-full object-cover">`
+            ).join('');
+
+            // ✨ 核心逻辑：自动从 skus 字段生成按钮
+            skuMatrix = JSON.parse(product.skus || '{}');
+            const container = document.getElementById('variation-options');
+            container.innerHTML = "";
+
+            const specs = Object.keys(skuMatrix);
+            if (specs.length === 0) {
+                container.innerHTML = `<p class="text-[10px] text-red-400">无规格数据</p>`;
+                return;
+            }
+
+            specs.forEach(specName => {
+                const btn = document.createElement('button');
+                btn.className = "spec-btn";
+                btn.innerText = specName;
+                btn.onclick = () => selectSpec(specName, btn);
+                container.appendChild(btn);
+            });
+        }
+
+        function selectSpec(name, el) {
+            selectedSpec = name;
+            const variant = skuMatrix[name];
+            
+            // 切换按钮高亮
+            document.querySelectorAll('.spec-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+
+            // 实时更新价格、库存和购买按钮状态
+            const btn = document.getElementById('buy-btn');
+            const hint = document.getElementById('stock-hint');
+            const priceLabel = document.getElementById('p-price');
+
+            if (variant && parseInt(variant.stock) > 0) {
+                priceLabel.innerText = `¥ ${variant.price}`;
+                btn.disabled = false;
+                btn.innerText = `GO TO CHECKOUT / 前往结算 (${variant.sku})`;
+                hint.innerText = `In Stock: ${variant.stock} Units Available`;
+            } else {
+                btn.disabled = true;
+                btn.innerText = "Out of Stock / 暂时缺货";
+                hint.innerText = "The selected variation is currently unavailable";
+            }
+        }
+
+        function handleBuy() {
+            if (!selectedSpec) {
+                alert("请先选择规格");
+                return;
+            }
+
+            // 获取选中的 SKU 编码
+            const skuCode = skuMatrix[selectedSpec].sku;
+            
+            // 跳转至结算页面，传递商品ID、规格名和SKU编码
+            const checkoutUrl = `checkout.html?pid=${productId}&spec=${encodeURIComponent(selectedSpec)}&sku=${skuCode}`;
+            window.location.href = checkoutUrl;
+        }
+    </script>
+</body>
+</html>

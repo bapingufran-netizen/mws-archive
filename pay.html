@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>SECURE CHECKOUT | 安全支付</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes pulse-border {
+            0% { transform: scale(1); opacity: 0.5; }
+            100% { transform: scale(1.1); opacity: 0; }
+        }
+        .qr-glow::after {
+            content: ''; position: absolute; inset: -10px; border: 2px solid #000;
+            border-radius: 20px; animation: pulse-border 2s infinite;
+        }
+    </style>
+</head>
+<body class="bg-zinc-50 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-12 rounded-[40px] shadow-2xl border border-zinc-100 text-center max-w-sm w-full">
+        <div class="mb-8">
+            <h2 class="text-[10px] font-bold tracking-[4px] uppercase text-zinc-400 mb-2">Total Amount / 支付金额</h2>
+            <p id="pay-amount" class="text-4xl font-light italic">¥ --</p>
+        </div>
+
+        <div class="relative w-64 h-64 mx-auto mb-10 qr-glow">
+            <div class="bg-zinc-100 w-full h-full rounded-2xl flex items-center justify-center overflow-hidden border-4 border-white shadow-inner">
+                <img id="qr-image" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=MWS_PAYMENT_WAITING" class="w-48 h-48 mix-blend-multiply">
+            </div>
+        </div>
+
+        <div class="space-y-6">
+            <div class="flex justify-center gap-4">
+                <div id="tag-wechat" class="px-4 py-2 border border-black bg-black text-white rounded-full text-[9px] font-bold uppercase tracking-widest cursor-pointer">WeChat Pay</div>
+                <div id="tag-alipay" class="px-4 py-2 border border-zinc-200 rounded-full text-[9px] font-bold uppercase tracking-widest cursor-pointer opacity-40">Alipay</div>
+            </div>
+            <p class="text-[10px] text-zinc-400 leading-relaxed uppercase tracking-widest">
+                请扫码完成支付<br>支付完成后系统将自动同步
+            </p>
+            <button id="pay-btn" onclick="simulateSuccess()" class="w-full py-4 bg-black text-white text-[10px] font-bold uppercase tracking-[0.3em] rounded-xl shadow-lg hover:bg-zinc-800 transition-all">
+                确认已支付 / I HAVE PAID
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const orderId = params.get('orderId');
+        const amount = params.get('amount') || '0.00';
+
+        // 1. 显示金额
+        document.getElementById('pay-amount').innerText = `¥ ${amount}`;
+
+        // 2. 动态生成二维码
+        if(orderId) {
+            const qrData = encodeURIComponent(`MWS_ORDER_${orderId}_AMT_${amount}`);
+            document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrData}`;
+        }
+
+        // 3. 支付渠道逻辑
+        let selectedMethod = "WeChat Pay";
+        document.getElementById('tag-wechat').onclick = () => {
+            selectedMethod = "WeChat Pay";
+            updateTags('tag-wechat', 'tag-alipay');
+        };
+        document.getElementById('tag-alipay').onclick = () => {
+            selectedMethod = "Alipay";
+            updateTags('tag-alipay', 'tag-wechat');
+        };
+
+        function updateTags(activeId, inactiveId) {
+            document.getElementById(activeId).className = "px-4 py-2 border border-black bg-black text-white rounded-full text-[9px] font-bold uppercase tracking-widest cursor-pointer";
+            document.getElementById(inactiveId).className = "px-4 py-2 border border-zinc-200 rounded-full text-[9px] font-bold uppercase tracking-widest cursor-pointer opacity-40";
+        }
+
+        // 4. ✨ 核心跳转逻辑修改
+        function simulateSuccess() {
+            if (!orderId) {
+                alert("订单无效，请重新下单");
+                window.location.href = "index.html";
+                return;
+            }
+
+            const btn = document.getElementById('pay-btn');
+            btn.innerText = "VERIFYING...";
+            btn.disabled = true;
+
+            // 模拟支付延迟效果，增强真实感
+            setTimeout(() => {
+                alert("支付成功！正在为您生成电子订单回执...");
+                
+                // 确保 orderId 能够正确传递到下一个页面
+                // 我们通过 URLSearchParams 确保参数格式 100% 正确
+                const targetUrl = new URL('order-success.html', window.location.origin);
+                targetUrl.searchParams.set('orderId', orderId);
+                targetUrl.searchParams.set('method', selectedMethod);
+                
+                window.location.href = targetUrl.href;
+            }, 800);
+        }
+    </script>
+</body>
+</html>

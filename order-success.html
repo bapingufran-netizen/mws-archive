@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>M.W.S ARCHIVE | 订单详情</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+        body { font-family: 'Inter', sans-serif; background: #fff; color: #111; }
+        .dashed-line { border-top: 1px dashed #eee; margin: 20px 0; }
+        /* 增加平滑入场动画 */
+        .fade-in { animation: fadeIn 0.8s ease-out forwards; opacity: 0; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-zinc-50 min-h-screen flex items-center justify-center p-6">
+
+    <div class="bg-white max-w-[500px] w-full shadow-sm border border-zinc-100 rounded-3xl overflow-hidden fade-in">
+        <div class="bg-black text-white p-10 text-center">
+            <div class="inline-flex items-center justify-center w-12 h-12 bg-white/10 rounded-full mb-4">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            <h1 class="text-xs font-bold uppercase tracking-[0.3em]">Payment Successful</h1>
+            <p class="text-[10px] text-zinc-400 mt-2 uppercase">您的订单已在处理中</p>
+        </div>
+
+        <div class="p-10 space-y-6">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h2 id="p-name" class="font-bold text-lg italic uppercase tracking-tight text-zinc-300">Loading...</h2>
+                    <p id="p-spec" class="text-[10px] text-zinc-400 uppercase tracking-widest"></p>
+                </div>
+                <p id="p-price" class="font-bold text-lg">¥ --</p>
+            </div>
+
+            <div class="dashed-line"></div>
+
+            <div class="grid grid-cols-2 gap-y-4 text-[10px] uppercase font-medium">
+                <div class="text-zinc-400">订单编号 / Order ID</div>
+                <div id="o-id" class="text-right font-mono font-bold text-black">--</div>
+
+                <div class="text-zinc-400">下单时间 / Time</div>
+                <div id="o-time" class="text-right">--</div>
+
+                <div class="text-zinc-400">支付渠道 / Method</div>
+                <div id="o-method" class="text-right">--</div>
+
+                <div class="text-zinc-400">物流单号 / Tracking</div>
+                <div id="o-track" class="text-right text-zinc-300 italic">待发货更新</div>
+            </div>
+
+            <div class="dashed-line"></div>
+
+            <div class="space-y-2">
+                <label class="text-[9px] font-bold text-black uppercase tracking-widest">Shipping To / 收件信息</label>
+                <div class="bg-zinc-50 p-4 rounded-xl space-y-1 border border-zinc-100">
+                    <p id="o-customer" class="text-[11px] font-bold text-black">--</p>
+                    <p id="o-phone" class="text-[10px] text-zinc-500 font-mono">--</p>
+                    <p id="o-address" class="text-[10px] text-zinc-500 leading-relaxed uppercase">--</p>
+                </div>
+            </div>
+
+            <button onclick="location.href='index.html'" class="w-full py-4 border border-black text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-black hover:text-white transition-all duration-300">
+                Back to Home / 返回首页
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 1. 页面加载逻辑
+        window.onload = async () => {
+            const params = new URLSearchParams(window.location.search);
+            const orderIdFromUrl = params.get('orderId');
+            const methodFromUrl = params.get('method') || 'WeChat Pay';
+
+            if (!orderIdFromUrl) {
+                document.getElementById('p-name').innerText = "ERROR: NO ORDER ID";
+                return;
+            }
+
+            try {
+                // 2. ✨ 并行请求提高速度
+                const [orderRes, productRes] = await Promise.all([
+                    fetch('/api/orders').then(r => r.json()),
+                    fetch('/api/products').then(r => r.json())
+                ]);
+
+                // 3. ✨ 核心修复：使用 == (不严谨匹配) 解决字符串与数字对比失败的问题
+                const order = orderRes.find(o => o.id == orderIdFromUrl);
+
+                if (order) {
+                    const product = productRes.find(p => p.id == order.product_id);
+
+                    // 4. 填充 DOM 数据
+                    document.getElementById('p-name').innerText = product ? product.name : "ARCHIVE ITEM";
+                    document.getElementById('p-name').classList.remove('text-zinc-300');
+                    document.getElementById('p-spec').innerText = `SELECTED: ${order.spec_key}`;
+                    
+                    document.getElementById('o-id').innerText = order.sku_code || `MWS-${order.id}`;
+                    document.getElementById('o-time').innerText = new Date(order.created_at).toLocaleString();
+                    
+                    // 支付方式优先读取数据库记录
+                    document.getElementById('o-method').innerText = order.payment_method || methodFromUrl;
+                    document.getElementById('o-track').innerText = order.tracking_number || "待发货更新";
+                    
+                    document.getElementById('o-customer').innerText = order.customer_name;
+                    document.getElementById('o-phone').innerText = order.phone;
+                    document.getElementById('o-address').innerText = order.address;
+
+                    // 5. 价格渲染：尝试匹配具体规格的价格
+                    if (product) {
+                        try {
+                            const skus = JSON.parse(product.skus || '{}');
+                            const variant = skus[order.spec_key];
+                            document.getElementById('p-price').innerText = `¥ ${variant ? variant.price : product.price}`;
+                        } catch (e) {
+                            document.getElementById('p-price').innerText = `¥ ${product.price}`;
+                        }
+                    }
+                } else {
+                    document.getElementById('p-name').innerText = "ORDER NOT FOUND";
+                }
+            } catch (err) {
+                console.error("DATA ERROR:", err);
+                document.getElementById('p-name').innerText = "CONNECTION ERROR";
+            }
+        };
+    </script>
+</body>
+</html>
