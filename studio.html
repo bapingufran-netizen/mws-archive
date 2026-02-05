@@ -30,6 +30,36 @@
         ::-webkit-scrollbar { width: 0px; }
         .inventory-scroll { height: calc(100vh - 300px); overflow-y: auto; }
         .main-card { background: #fff; border-radius: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.03); }
+
+        /* 新增：详情预览图样式 */
+        .detail-item {
+            position: relative;
+            aspect-ratio: 1/1;
+            border-radius: 1.5rem;
+            overflow: hidden;
+            background: #f8f8f8;
+        }
+        .detail-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .detail-remove {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: rgba(0,0,0,0.4);
+            color: white;
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+        }
     </style>
 </head>
 <body class="overflow-hidden bg-[#fafafa]">
@@ -64,7 +94,7 @@
                             <input type="file" id="main-file" hidden onchange="handleMainUpload(this)">
                         </div>
 
-                        <div class="flex flex-col justify-center space-y-10">
+                        <div class="flex flex-col justify-start space-y-10">
                             <div class="space-y-2">
                                 <label class="text-[11px] bold-text text-zinc-400 uppercase tracking-widest">Item Name / 档案名称</label>
                                 <input type="text" id="p-name" class="studio-input text-[18px]" placeholder="请输入品名...">
@@ -88,6 +118,16 @@
                             <div class="space-y-2">
                                 <label class="text-[11px] bold-text text-zinc-400 uppercase tracking-widest">Archive Description / 档案文字描述</label>
                                 <textarea id="p-desc" class="studio-input h-32 resize-none" placeholder="输入灵感来源、材质细节说明..."></textarea>
+                            </div>
+
+                            <div class="space-y-4 pt-6 border-t border-zinc-50">
+                                <label class="text-[11px] bold-text text-zinc-400 uppercase tracking-widest">Detail Showcase / 详情展示图</label>
+                                <div class="grid grid-cols-4 gap-4" id="detail-preview-grid">
+                                    <div onclick="document.getElementById('detail-files').click()" class="aspect-square bg-zinc-50 border-2 border-dashed border-zinc-200 rounded-[1.5rem] flex items-center justify-center cursor-pointer hover:border-black transition group">
+                                        <span class="text-2xl text-zinc-300 group-hover:text-black">+</span>
+                                    </div>
+                                </div>
+                                <input type="file" id="detail-files" hidden multiple onchange="handleDetailUpload(this)">
                             </div>
                         </div>
                     </section>
@@ -143,16 +183,17 @@
 
     <script>
         let mainImgBase64 = "";
-        let skuMatrix = {}; // 存储当前所有规格详细数据
-        let activeSpecs = []; // 当前选中的规格按钮列表
+        let detailImages = []; // 全局存储详情图数组
+        let skuMatrix = {}; 
+        let activeSpecs = []; 
         let currentEditId = null;
 
         window.onload = () => {
-            refreshInventory(); // 加载左侧列表
+            refreshInventory(); 
             document.getElementById('drop-zone').onclick = () => document.getElementById('main-file').click();
         };
 
-        // 1. 图片上传
+        // 1. 主图上传逻辑
         function handleMainUpload(input) {
             const file = input.files[0];
             if (!file) return;
@@ -167,7 +208,46 @@
             reader.readAsDataURL(file);
         }
 
-        // 2. 生成 Amazon 风格按钮
+        // 2. 新增：详情图多图上传逻辑
+        function handleDetailUpload(input) {
+            const files = Array.from(input.files);
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    detailImages.push(e.target.result);
+                    renderDetailPreviews();
+                };
+                reader.readAsDataURL(file);
+            });
+            input.value = ""; // 清空以便重复选择
+        }
+
+        // 3. 新增：渲染详情图预览
+        function renderDetailPreviews() {
+            const grid = document.getElementById('detail-preview-grid');
+            grid.innerHTML = `
+                <div onclick="document.getElementById('detail-files').click()" class="aspect-square bg-zinc-50 border-2 border-dashed border-zinc-200 rounded-[1.5rem] flex items-center justify-center cursor-pointer hover:border-black transition group">
+                    <span class="text-2xl text-zinc-300 group-hover:text-black">+</span>
+                </div>
+            `;
+            detailImages.forEach((src, index) => {
+                const div = document.createElement('div');
+                div.className = "detail-item animate__animated animate__fadeIn";
+                div.innerHTML = `
+                    <img src="${src}">
+                    <div class="detail-remove" onclick="removeDetail(${index})">✕</div>
+                `;
+                grid.appendChild(div);
+            });
+        }
+
+        // 4. 新增：删除详情图
+        function removeDetail(index) {
+            detailImages.splice(index, 1);
+            renderDetailPreviews();
+        }
+
+        // 5. 规格标签构建
         function buildTags() {
             const val = document.getElementById('attr-input').value;
             const tagsArr = val.split(',').map(v => v.trim()).filter(v => v);
@@ -176,14 +256,13 @@
             
             tagsArr.forEach(t => {
                 const span = document.createElement('div');
-                span.className = "spec-tag";
+                span.className = activeSpecs.includes(t) ? "spec-tag active" : "spec-tag";
                 span.innerText = t;
                 span.onclick = () => toggleSpec(t, span);
                 area.appendChild(span);
             });
         }
 
-        // 3. 点击按钮切换规格
         function toggleSpec(name, element) {
             if (activeSpecs.includes(name)) {
                 activeSpecs = activeSpecs.filter(s => s !== name);
@@ -192,17 +271,15 @@
                 activeSpecs.push(name);
                 element.classList.add('active');
             }
-            renderMatrix(); // 实时渲染输入框
+            renderMatrix(); 
         }
 
-        // 4. 渲染矩阵输入框
         function renderMatrix() {
             const tbody = document.getElementById('sku-body');
             const globalPrice = document.getElementById('p-price').value || 0;
             tbody.innerHTML = "";
 
             activeSpecs.forEach(spec => {
-                // 如果是新选中的，则初始化数据
                 if (!skuMatrix[spec]) {
                     skuMatrix[spec] = { price: globalPrice, stock: 99, sku: `MWS-${spec.toUpperCase()}` };
                 }
@@ -219,7 +296,6 @@
             });
         }
 
-        // 5. 一键同步与批量调整
         function syncAllPrices(val) {
             activeSpecs.forEach(spec => {
                 if(skuMatrix[spec]) skuMatrix[spec].price = val;
@@ -242,7 +318,7 @@
             alert("全局同步成功");
         }
 
-        // 6. 提交数据 (保持 server.js 接口打通)
+        // 6. 核心：提交数据 (不改动 server.js 接口，通过 JSON.stringify 封装详情图数组)
         async function submitProduct() {
             const payload = {
                 id: currentEditId,
@@ -250,9 +326,9 @@
                 price: parseFloat(document.getElementById('p-price').value) || 0,
                 image: mainImgBase64,
                 category: document.getElementById('p-category').value,
-                description: document.getElementById('p-desc').value, // 文字描述保存
+                description: document.getElementById('p-desc').value,
                 skus: JSON.stringify(skuMatrix),
-                detail_images: JSON.stringify([])
+                detail_images: JSON.stringify(detailImages) // 将数组封装为字符串发送
             };
 
             if(!payload.name || !payload.image || activeSpecs.length === 0) {
@@ -271,7 +347,7 @@
             }
         }
 
-        // 7. 库存列表联动回显
+        // 7. 库存列表获取与回显
         async function refreshInventory() {
             const res = await fetch('/api/products');
             const products = await res.json();
@@ -297,27 +373,24 @@
             document.getElementById('p-name').value = item.name;
             document.getElementById('p-price').value = item.price;
             document.getElementById('p-category').value = item.category;
-            document.getElementById('p-desc').value = item.description; // 描述回显
+            document.getElementById('p-desc').value = item.description;
             
             mainImgBase64 = item.image;
             document.getElementById('main-preview').src = item.image;
             document.getElementById('main-preview').classList.remove('hidden');
             document.getElementById('placeholder').classList.add('hidden');
 
+            // 还原详情图
+            try {
+                detailImages = JSON.parse(item.detail_images || "[]");
+                renderDetailPreviews();
+            } catch(e) { detailImages = []; }
+
             // 规格还原
             skuMatrix = JSON.parse(item.skus || '{}');
             activeSpecs = Object.keys(skuMatrix);
             
-            // 还原按钮
-            const area = document.getElementById('tags-area');
-            area.innerHTML = "";
-            activeSpecs.forEach(t => {
-                const span = document.createElement('div');
-                span.className = "spec-tag active";
-                span.innerText = t;
-                span.onclick = () => toggleSpec(t, span);
-                area.appendChild(span);
-            });
+            buildTags(); // 刷新标签区域
             renderMatrix();
             document.getElementById('publish-btn').innerText = "UPDATE CURRENT ARCHIVE";
         }
