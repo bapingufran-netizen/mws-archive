@@ -70,6 +70,7 @@
     <div id="auth-modal" class="fixed inset-0 z-[200] flex items-center justify-center p-6">
         <div class="bg-white w-full max-w-[380px] p-12 rounded-[2rem] shadow-2xl relative animate__animated animate__zoomIn">
             <button onclick="closeAuth()" class="absolute top-8 right-8 text-zinc-300 hover:text-black transition">✕</button>
+            
             <div id="login-form">
                 <h3 class="text-xs font-bold tracking-[0.3em] uppercase mb-10 text-center">Member Login</h3>
                 <div class="space-y-6">
@@ -79,6 +80,7 @@
                 </div>
                 <p class="mt-8 text-[9px] text-zinc-400 text-center tracking-widest uppercase">New? <span class="text-black cursor-pointer underline" onclick="toggleAuth('reg')">Register</span></p>
             </div>
+
             <div id="reg-form" class="hidden">
                 <h3 class="text-xs font-bold tracking-[0.3em] uppercase mb-10 text-center">Create Account</h3>
                 <div class="space-y-6">
@@ -87,6 +89,7 @@
                     <input type="password" id="r-pass" placeholder="PASSWORD" class="auth-input w-full p-4 text-[10px] tracking-widest">
                     <button onclick="handleRegister()" class="w-full bg-black text-white py-4 text-[10px] font-bold uppercase tracking-[0.3em] rounded-xl">Join Archive</button>
                 </div>
+                <p class="mt-8 text-[9px] text-zinc-400 text-center tracking-widest uppercase">Member? <span class="text-black cursor-pointer underline" onclick="toggleAuth('login')">Login</span></p>
             </div>
         </div>
     </div>
@@ -149,7 +152,8 @@
             const btn = document.getElementById('user-btn');
             const adminLink = document.getElementById('admin-link');
             if (currentUser) {
-                btn.innerText = `Account / ${currentUser.nickname}`;
+                btn.innerText = `Account / ${currentUser.nickname || currentUser.username}`;
+                // 特别注意：这里的逻辑取决于你后端对 admin 角色的定义
                 if (currentUser.role === 'admin') adminLink.style.display = 'block';
             }
         }
@@ -183,14 +187,74 @@
 
         function filterCate(cate) {
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            event.target.classList.add('active');
+            if(event) event.target.classList.add('active');
             const filtered = cate === 'ALL' ? allProducts : allProducts.filter(p => p.category === cate);
             renderGrid(filtered);
         }
 
+        // --- AUTH 逻辑修复区 ---
+
         function openAuth() { document.getElementById('auth-modal').style.display = 'flex'; }
         function closeAuth() { document.getElementById('auth-modal').style.display = 'none'; }
-        
+
+        // 修复切换注册/登录逻辑
+        function toggleAuth(mode) {
+            const loginForm = document.getElementById('login-form');
+            const regForm = document.getElementById('reg-form');
+            if(mode === 'reg') {
+                loginForm.classList.add('hidden');
+                regForm.classList.remove('hidden');
+            } else {
+                regForm.classList.add('hidden');
+                loginForm.classList.remove('hidden');
+            }
+        }
+
+        // 注册处理
+        async function handleRegister() {
+            const nick = document.getElementById('r-nick').value;
+            const email = document.getElementById('r-email').value;
+            const pass = document.getElementById('r-pass').value;
+
+            if(!email || !pass) return alert("请填写完整信息");
+
+            try {
+                const res = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: email, nickname: nick, password: pass })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    alert("注册成功！请登录。");
+                    toggleAuth('login');
+                } else {
+                    alert("注册失败: " + data.message);
+                }
+            } catch (e) { alert("服务器连接失败"); }
+        }
+
+        // 登录处理
+        async function handleLogin() {
+            const email = document.getElementById('l-email').value;
+            const pass = document.getElementById('l-pass').value;
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: email, password: pass })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    localStorage.setItem('mws_user', JSON.stringify(data.user));
+                    location.reload();
+                } else {
+                    alert("登录失败: " + data.message);
+                }
+            } catch (e) { alert("服务器连接失败"); }
+        }
+
         window.onload = () => { loadProducts(); checkAuth(); };
     </script>
 </body>
