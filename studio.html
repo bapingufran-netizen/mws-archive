@@ -149,6 +149,9 @@
     <script>
         const CLOUD_NAME = "dbyud7vlz";
         const UPLOAD_PRESET = "mws_assets";
+        // ✨ 安全钥匙：须与 server.js 中的 MWS_ADMIN_KEY 一致
+        const MWS_AUTH_KEY = "MWS2026"; 
+
         let mainImgUrl = "", detailImages = [], skuMatrix = {}, activeSpecs = [], currentEditId = null;
 
         window.onload = refreshInventory;
@@ -244,7 +247,7 @@
 
         function syncAllPrices(val) { activeSpecs.forEach(s => { if(skuMatrix[s]) skuMatrix[s].price = val; }); renderMatrix(); }
 
-        // 数据存储
+        // 数据存储 (✨ 已配钥匙)
         async function submitProduct(status = '已发布') {
             const name = document.getElementById('p-name').value;
             if(!name || !mainImgUrl) return alert("请完整填写品名并上传主图");
@@ -260,8 +263,25 @@
                 skus: JSON.stringify(skuMatrix), 
                 detail_images: JSON.stringify(detailImages) 
             };
-            const res = await fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            if(res.ok) { alert("档案更新成功"); refreshInventory(); resetEditor(); }
+            
+            // ✨ 在 Headers 中发送安全钥匙
+            const res = await fetch('/api/products', { 
+                method: 'POST', 
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'x-mws-auth': MWS_AUTH_KEY 
+                }, 
+                body: JSON.stringify(payload) 
+            });
+
+            if(res.ok) { 
+                alert("作品档案已安全同步至云端"); 
+                refreshInventory(); 
+                resetEditor(); 
+            } else {
+                const errData = await res.json();
+                alert("操作被拒绝：" + (errData.message || "权限不足"));
+            }
         }
 
         // 列表与列表操作
@@ -305,10 +325,17 @@
             renderDetailPreviews(); buildTags(); renderMatrix();
         }
 
+        // ✨ 删除逻辑已配钥匙
         async function deleteProduct(id, e) {
             e.stopPropagation();
             if(!confirm("确认永久删除此作品档案？")) return;
-            await fetch(`/api/products/${id}`, { method: 'DELETE' });
+            
+            await fetch(`/api/products/${id}`, { 
+                method: 'DELETE',
+                headers: {
+                    'x-mws-auth': MWS_AUTH_KEY
+                }
+            });
             refreshInventory();
         }
 
@@ -319,7 +346,7 @@
             const item = list.find(p => p.id === id);
             currentEditId = null;
             document.getElementById('p-name').value = item.name + " (副本)";
-            alert("已克隆资料，修改后点击发布即可保存为新品");
+            alert("已克隆资料，修改后点击发布即可保存为新产品");
         }
     </script>
 </body>
