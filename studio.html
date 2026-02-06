@@ -2,86 +2,325 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>M.W.S 工作室 | 档案与产品管理</title>
+    <title>M.W.S STUDIO | 产品档案与工作室管理</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { font-family: 'Inter', "Microsoft YaHei", sans-serif; background: #fafafa; color: #000; }
-        .bold-text { font-weight: 700 !important; letter-spacing: 0.1em; }
+        
+        /* 侧边栏滚动条隐藏 */
+        .inventory-scroll { height: calc(100vh - 280px); overflow-y: auto; scrollbar-width: none; }
+        .inventory-scroll::-webkit-scrollbar { display: none; }
+
+        /* 输入框样式优化 */
         .studio-input { border-bottom: 2px solid #f0f0f0; padding: 12px 0; outline: none; transition: 0.3s; width: 100%; background: transparent; font-size: 14px; }
         .studio-input:focus { border-bottom-color: #000; }
-        .inventory-scroll { height: calc(100vh - 250px); overflow-y: auto; scrollbar-width: none; }
-        .main-card { background: #fff; border-radius: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.03); }
-        .status-tag { font-size: 9px; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; font-weight: 900; }
-        .tag-draft { background: #eee; color: #999; }
+
+        /* 状态标签样式 */
+        .status-tag { font-size: 9px; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; font-weight: 900; letter-spacing: 0.1em; }
+        .tag-draft { background: #f4f4f4; color: #999; }
         .tag-live { background: #000; color: #fff; }
-        ::-webkit-scrollbar { display: none; }
+
+        /* 主图区域 */
+        .drop-zone { transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); }
+        .drop-zone:hover { border-color: #000; transform: translateY(-2px); }
+        
+        .main-card { background: #fff; border-radius: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.02); }
     </style>
 </head>
-<body class="overflow-hidden bg-[#fafafa]">
+<body class="overflow-hidden">
 
     <div class="flex h-screen">
-        <aside class="w-96 border-r border-zinc-100 flex flex-col p-8 bg-white">
+        
+        <aside class="w-96 border-r border-zinc-100 flex flex-col p-8 bg-white z-10">
             <div class="mb-10">
-                <h1 class="text-xl font-black tracking-tighter mb-1">工作室管理</h1>
-                <p class="text-[10px] text-zinc-300 font-bold uppercase tracking-widest">M.W.S STUDIO / ARCHIVE</p>
+                <h1 class="text-xl font-black tracking-tighter">工作室管理</h1>
+                <p class="text-[10px] text-zinc-300 font-bold uppercase tracking-[0.2em]">M.W.S STUDIO MANAGEMENT</p>
             </div>
 
             <div class="flex-1 min-h-0">
                 <div class="flex justify-between items-center mb-6">
-                    <span class="text-[11px] font-black uppercase tracking-widest text-zinc-400">产品列表 / PRODUCT LIST</span>
-                    <button onclick="resetEditor()" class="w-8 h-8 bg-black text-white rounded-full text-xl flex items-center justify-center hover:rotate-90 transition-all">+</button>
+                    <span class="text-[11px] font-black uppercase tracking-widest text-zinc-400">产品列表 / ARCHIVE</span>
+                    <button onclick="resetEditor()" class="w-8 h-8 bg-black text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-lg">+</button>
                 </div>
-                <div id="inventory-list" class="inventory-scroll space-y-3"></div>
+                
+                <div id="inventory-list" class="inventory-scroll space-y-3">
+                    </div>
             </div>
 
-            <button onclick="location.href='admin-console.html'" class="mt-6 text-[10px] font-bold text-zinc-400 hover:text-black transition text-left uppercase tracking-widest">← 返回控制台 / BACK</button>
+            <div class="mt-8 pt-6 border-t border-zinc-50">
+                <button onclick="location.href='admin-console.html'" class="text-[10px] font-black text-zinc-400 hover:text-black transition uppercase tracking-widest">← 返回控制台中枢 / BACK</button>
+            </div>
         </aside>
 
-        <main class="flex-1 overflow-y-auto p-12">
+        <main class="flex-1 overflow-y-auto p-12 bg-[#fafafa]">
             <div class="max-w-6xl mx-auto">
-                <div class="main-card p-10">
-                    <div class="grid grid-cols-12 gap-12 mb-16">
+                <div class="main-card p-12">
+                    
+                    <div class="grid grid-cols-12 gap-16 mb-16">
                         <div class="col-span-5">
-                            <label class="text-[11px] font-black text-zinc-400 uppercase tracking-widest block mb-4">封面主图 / MAIN COVER</label>
-                            <div id="drop-zone" onclick="document.getElementById('main-file').click()" class="aspect-[3/4] bg-zinc-50 rounded-[2rem] border-2 border-dashed border-zinc-100 flex flex-col items-center justify-center cursor-pointer relative overflow-hidden group hover:border-black transition-all">
+                            <label class="text-[11px] font-black text-zinc-400 uppercase tracking-widest block mb-4">封面主图 / MAIN IMAGE</label>
+                            <div id="drop-zone" onclick="document.getElementById('main-file').click()" class="drop-zone aspect-[3/4] bg-zinc-50 rounded-[2.5rem] border-2 border-dashed border-zinc-100 flex flex-col items-center justify-center cursor-pointer relative overflow-hidden group">
                                 <img id="main-preview" class="hidden w-full h-full object-cover">
                                 <div id="placeholder" class="text-center">
+                                    <div class="text-3xl mb-2 text-zinc-200">↑</div>
                                     <p class="text-[10px] font-black text-zinc-300 uppercase">点击同步云端主图</p>
                                 </div>
                                 <input type="file" id="main-file" hidden onchange="handleMainUpload(this)">
                             </div>
                         </div>
 
-                        <div class="col-span-7 space-y-8">
+                        <div class="col-span-7 space-y-10">
                             <div>
-                                <label class="text-[11px] font-black text-zinc-400 uppercase tracking-widest block mb-2">产品名称 / ITEM NAME</label>
-                                <input type="text" id="p-name" class="studio-input text-xl font-bold" placeholder="请输入品名...">
+                                <label class="text-[11px] font-black text-zinc-400 uppercase tracking-widest block mb-2">作品名称 / PRODUCT NAME</label>
+                                <input type="text" id="p-name" class="studio-input text-2xl font-bold" placeholder="输入产品名称...">
                             </div>
 
-                            <div class="grid grid-cols-2 gap-8">
+                            <div class="grid grid-cols-2 gap-10">
                                 <div>
-                                    <label class="text-[11px] font-black text-zinc-400 uppercase tracking-widest block mb-2">基础定价 / BASE PRICE (¥)</label>
-                                    <input type="number" id="p-price" class="studio-input" placeholder="0.00" oninput="syncAllPrices(this.value)">
+                                    <label class="text-[11px] font-black text-zinc-400 uppercase tracking-widest block mb-2">基础标价 / BASE PRICE</label>
+                                    <input type="number" id="p-price" class="studio-input font-bold" placeholder="¥ 0.00" oninput="syncAllPrices(this.value)">
                                 </div>
                                 <div>
                                     <label class="text-[11px] font-black text-zinc-400 uppercase tracking-widest block mb-2">所属系列 / COLLECTION</label>
-                                    <select id="p-category" class="studio-input">
+                                    <select id="p-category" class="studio-input font-bold">
                                         <option value="Silk Series">真丝系列 / Silk Series</option>
-                                        <option value="Atelier">手工坊 / Atelier</option>
+                                        <option value="Atelier">手工坊系列 / Atelier</option>
                                         <option value="Archive">经典档案 / Archive</option>
                                     </select>
                                 </div>
                             </div>
 
                             <div>
-                                <label class="text-[11px] font-black text-zinc-400 uppercase tracking-widest block mb-2">品牌叙事描述 / DESCRIPTION</label>
-                                <textarea id="p-desc" class="studio-input h-32 resize-none" placeholder="为此作品撰写叙事内容，将展示在产品详情页..."></textarea>
+                                <label class="text-[11px] font-black text-zinc-400 uppercase tracking-widest block mb-2">品牌叙事 / DESCRIPTION</label>
+                                <textarea id="p-desc" class="studio-input h-32 resize-none leading-relaxed" placeholder="撰写该作品的品牌故事与设计理念..."></textarea>
                             </div>
 
                             <div>
-                                <label class="text-[11px] font-black text-zinc-400 uppercase tracking-widest block mb-4">细节展示图 / DETAILS</label>
+                                <label class="text-[11px] font-black text-zinc-400 uppercase tracking-widest block mb-4">细节图集 / GALLERY</label>
                                 <div class="grid grid-cols-5 gap-3" id="detail-preview-grid">
-                                    <div onclick="document.getElementById('detail-files').click()" class="aspect-square bg-zinc-50 border border-dashed border-zinc-200 rounded-xl flex items-center justify-center cursor-pointer hover:border-black transition text-zinc-300">+</div>
+                                    <div onclick="document.getElementById('detail-files').click()" class="aspect-square bg-zinc-50 border border-dashed border-zinc-200 rounded-xl flex items-center justify-center cursor-pointer hover:border-black transition text-zinc-300 text-xl">+</div>
                                 </div>
                                 <input type="file" id="detail-files" hidden multiple onchange="handleDetailUpload(this)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-zinc-50 pt-10 mb-12">
+                        <div class="flex justify-between items-center mb-8">
+                            <div>
+                                <h3 class="text-sm font-black uppercase tracking-widest">规格矩阵与库存 / SKU MATRIX</h3>
+                                <p class="text-[10px] text-zinc-300 mt-1 uppercase">管理尺码、色号及内部备注</p>
+                            </div>
+                            <div class="flex gap-4">
+                                <input type="text" id="attr-input" placeholder="输入规格 (如: S, M, L)..." class="border-b outline-none text-xs w-48 py-2">
+                                <button onclick="buildTags()" class="bg-zinc-100 px-6 py-2 rounded-lg text-[10px] font-black hover:bg-black hover:text-white transition uppercase">生成标签</button>
+                            </div>
+                        </div>
+                        
+                        <div id="tags-area" class="flex flex-wrap gap-2 mb-8 min-h-[40px]"></div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="text-[10px] font-black text-zinc-400 uppercase border-b pb-4">
+                                    <tr>
+                                        <th class="pb-4 w-24">规格/尺码</th>
+                                        <th class="pb-4 w-32">颜色/色号</th>
+                                        <th class="pb-4 w-24">价格 (¥)</th>
+                                        <th class="pb-4 w-20">库存</th>
+                                        <th class="pb-4 w-40">商家编码</th>
+                                        <th class="pb-4">管理备注 (对内)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sku-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <button onclick="submitProduct('草稿')" class="flex-1 border-2 border-black py-6 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-zinc-50 transition">暂存为草稿 / SAVE DRAFT</button>
+                        <button onclick="submitProduct('已发布')" id="publish-btn" class="flex-[2] bg-black text-white py-6 rounded-2xl font-black text-[11px] uppercase tracking-[0.4em] hover:opacity-90 transition shadow-xl">确认并发布作品 / PUBLISH</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const CLOUD_NAME = "dbyud7vlz";
+        const UPLOAD_PRESET = "mws_assets";
+        let mainImgUrl = "", detailImages = [], skuMatrix = {}, activeSpecs = [], currentEditId = null;
+
+        window.onload = refreshInventory;
+
+        function resetEditor() {
+            currentEditId = null;
+            document.getElementById('p-name').value = "";
+            document.getElementById('p-price').value = "";
+            document.getElementById('p-desc').value = "";
+            mainImgUrl = "";
+            detailImages = [];
+            skuMatrix = {};
+            activeSpecs = [];
+            document.getElementById('main-preview').classList.add('hidden');
+            document.getElementById('placeholder').classList.remove('hidden');
+            document.getElementById('tags-area').innerHTML = "";
+            document.getElementById('sku-body').innerHTML = "";
+            renderDetailPreviews();
+        }
+
+        // 云端上传逻辑
+        async function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', UPLOAD_PRESET);
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, { method: 'POST', body: formData });
+            const data = await res.json();
+            return data.secure_url;
+        }
+
+        async function handleMainUpload(input) {
+            const file = input.files[0]; if (!file) return;
+            const btn = document.getElementById('publish-btn');
+            btn.innerText = "正在同步云端...";
+            mainImgUrl = await uploadFile(file);
+            document.getElementById('main-preview').src = mainImgUrl;
+            document.getElementById('main-preview').classList.remove('hidden');
+            document.getElementById('placeholder').classList.add('hidden');
+            btn.innerText = "确认并发布作品 / PUBLISH";
+        }
+
+        async function handleDetailUpload(input) {
+            const files = Array.from(input.files);
+            for (const f of files) { detailImages.push(await uploadFile(f)); }
+            renderDetailPreviews();
+        }
+
+        function renderDetailPreviews() {
+            const grid = document.getElementById('detail-preview-grid');
+            grid.innerHTML = `<div onclick="document.getElementById('detail-files').click()" class="aspect-square bg-zinc-50 border border-dashed border-zinc-200 rounded-xl flex items-center justify-center cursor-pointer hover:border-black transition text-zinc-300 text-xl">+</div>`;
+            detailImages.forEach((src, i) => {
+                const div = document.createElement('div');
+                div.className = "relative aspect-square rounded-xl overflow-hidden bg-zinc-100 group";
+                div.innerHTML = `<img src="${src}" class="w-full h-full object-cover"><div onclick="detailImages.splice(${i},1);renderDetailPreviews()" class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[10px] cursor-pointer">移除</div>`;
+                grid.appendChild(div);
+            });
+        }
+
+        // 规格管理逻辑
+        function buildTags() {
+            const val = document.getElementById('attr-input').value;
+            const tags = val.split(',').map(v => v.trim()).filter(v => v);
+            const area = document.getElementById('tags-area');
+            area.innerHTML = "";
+            tags.forEach(t => {
+                const span = document.createElement('div');
+                span.className = activeSpecs.includes(t) ? "px-4 py-2 bg-black text-white rounded-lg text-[10px] font-black cursor-pointer transition" : "px-4 py-2 bg-zinc-100 rounded-lg text-[10px] font-black cursor-pointer hover:bg-zinc-200 transition";
+                span.innerText = t;
+                span.onclick = () => { if(activeSpecs.includes(t)) activeSpecs=activeSpecs.filter(s=>s!==t); else activeSpecs.push(t); buildTags(); renderMatrix(); };
+                area.appendChild(span);
+            });
+        }
+
+        function renderMatrix() {
+            const tbody = document.getElementById('sku-body'); tbody.innerHTML = "";
+            activeSpecs.forEach(spec => {
+                if (!skuMatrix[spec]) {
+                    skuMatrix[spec] = { price: document.getElementById('p-price').value || 0, stock: 99, sku: `MWS-${spec.toUpperCase()}`, color: "", remark: "" };
+                }
+                const row = document.createElement('tr');
+                row.className = "border-b border-zinc-50 hover:bg-zinc-50/50 transition";
+                row.innerHTML = `
+                    <td class="py-4 font-bold text-xs uppercase">${spec}</td>
+                    <td class="py-2"><input type="text" class="bg-zinc-100/50 p-2 rounded-lg w-28 text-[10px] font-bold outline-none" placeholder="颜色/色号" value="${skuMatrix[spec].color || ''}" oninput="skuMatrix['${spec}'].color=this.value"></td>
+                    <td class="py-2"><input type="number" class="bg-zinc-50 p-2 rounded-lg w-20 text-[10px] font-bold" value="${skuMatrix[spec].price}" oninput="skuMatrix['${spec}'].price=this.value"></td>
+                    <td class="py-2"><input type="number" class="bg-zinc-50 p-2 rounded-lg w-16 text-[10px] font-bold" value="${skuMatrix[spec].stock}" oninput="skuMatrix['${spec}'].stock=this.value"></td>
+                    <td class="py-2"><input type="text" class="bg-zinc-50 p-2 rounded-lg w-32 text-[10px] font-bold" value="${skuMatrix[spec].sku}" oninput="skuMatrix['${spec}'].sku=this.value"></td>
+                    <td class="py-2"><input type="text" class="bg-zinc-100/30 p-2 rounded-lg w-full text-[10px] italic" placeholder="内部管理备注..." value="${skuMatrix[spec].remark || ''}" oninput="skuMatrix['${spec}'].remark=this.value"></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function syncAllPrices(val) { activeSpecs.forEach(s => { if(skuMatrix[s]) skuMatrix[s].price = val; }); renderMatrix(); }
+
+        // 数据存储
+        async function submitProduct(status = '已发布') {
+            const name = document.getElementById('p-name').value;
+            if(!name || !mainImgUrl) return alert("请完整填写品名并上传主图");
+
+            const payload = { 
+                id: currentEditId, 
+                name: name, 
+                price: document.getElementById('p-price').value, 
+                image: mainImgUrl, 
+                category: document.getElementById('p-category').value, 
+                description: document.getElementById('p-desc').value, 
+                status: status,
+                skus: JSON.stringify(skuMatrix), 
+                detail_images: JSON.stringify(detailImages) 
+            };
+            const res = await fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if(res.ok) { alert("档案更新成功"); refreshInventory(); resetEditor(); }
+        }
+
+        // 列表与列表操作
+        async function refreshInventory() {
+            const res = await fetch('/api/products');
+            const data = await res.json();
+            document.getElementById('inventory-list').innerHTML = data.map(p => `
+                <div class="group flex items-center gap-4 p-3 bg-zinc-50 rounded-2xl hover:bg-black hover:text-white transition-all cursor-pointer relative" onclick="loadToEditor(${p.id})">
+                    <img src="${p.image}" class="w-12 h-16 object-cover rounded-lg">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="status-tag ${p.status === '草稿' ? 'tag-draft' : 'tag-live'}">${p.status || '已发布'}</span>
+                            <span class="text-[11px] font-bold uppercase truncate w-32">${p.name}</span>
+                        </div>
+                        <p class="text-[9px] opacity-30 font-bold uppercase">Archive ID: #${p.id}</p>
+                    </div>
+                    <div class="absolute right-4 opacity-0 group-hover:opacity-100 flex gap-2 transition-opacity">
+                        <button onclick="duplicateProduct(${p.id}, event)" class="bg-white/20 text-[8px] p-1 px-2 rounded">克隆</button>
+                        <button onclick="deleteProduct(${p.id}, event)" class="bg-red-500 text-[8px] p-1 px-2 rounded text-white">删除</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadToEditor(id) {
+            const res = await fetch('/api/products');
+            const list = await res.json();
+            const item = list.find(p => p.id === id);
+            currentEditId = id;
+            document.getElementById('p-name').value = item.name;
+            document.getElementById('p-price').value = item.price;
+            document.getElementById('p-category').value = item.category;
+            document.getElementById('p-desc').value = item.description;
+            mainImgUrl = item.image;
+            document.getElementById('main-preview').src = item.image;
+            document.getElementById('main-preview').classList.remove('hidden');
+            document.getElementById('placeholder').classList.add('hidden');
+            detailImages = JSON.parse(item.detail_images || '[]');
+            skuMatrix = JSON.parse(item.skus || '{}');
+            activeSpecs = Object.keys(skuMatrix);
+            renderDetailPreviews(); buildTags(); renderMatrix();
+        }
+
+        async function deleteProduct(id, e) {
+            e.stopPropagation();
+            if(!confirm("确认永久删除此作品档案？")) return;
+            await fetch(`/api/products/${id}`, { method: 'DELETE' });
+            refreshInventory();
+        }
+
+        async function duplicateProduct(id, e) {
+            e.stopPropagation();
+            const res = await fetch('/api/products');
+            const list = await res.json();
+            const item = list.find(p => p.id === id);
+            currentEditId = null;
+            document.getElementById('p-name').value = item.name + " (副本)";
+            alert("已克隆资料，修改后点击发布即可保存为新品");
+        }
+    </script>
+</body>
+</html>
