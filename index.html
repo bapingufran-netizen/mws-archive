@@ -264,6 +264,36 @@
         }
 
         window.onload = () => { loadProducts(); checkAuth(); };
+
+        // 在页面加载时自动获取后台配置的大图
+async function applyLiveSettings() {
+    try {
+        const res = await fetch('/api/settings');
+        const config = await res.json();
+
+        // 1. 更新首页大图 (Banner)
+        if (config.hero_banner) {
+            const heroImg = document.querySelector('.hero-banner img');
+            if (heroImg) heroImg.src = config.hero_banner;
+        }
+
+        // 2. 更新公告栏 (如果有内容)
+        if (config.show_notice === 'true' && config.notice_content) {
+            // 这里可以添加展示公告栏的逻辑
+            console.log("公告内容:", config.notice_content);
+        }
+    } catch (err) {
+        console.error("加载配置失败:", err);
+    }
+}
+
+// 确保在产品加载的同时也加载配置
+window.addEventListener('DOMContentLoaded', () => {
+    applyLiveSettings();
+    loadProducts(); // 你原有的加载产品函数
+});
+        
     </script>
 </body>
 </html>
+
