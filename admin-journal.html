@@ -44,6 +44,16 @@
         /* 按钮点击波纹反馈 */
         .btn-press { transition: transform 0.1s; }
         .btn-press:active { transform: scale(0.95); }
+
+        /* 封面预览区样式 */
+        .cover-dropzone {
+            width: 100%; height: 300px; background: #fafafa;
+            border: 2px dashed #eee; display: flex;
+            align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.3s; overflow: hidden;
+        }
+        .cover-dropzone:hover { border-color: #000; }
+        .cover-dropzone img { width: 100%; height: 100%; object-cover: cover; }
     </style>
 </head>
 <body class="min-h-screen">
@@ -73,7 +83,7 @@
         </div>
 
         <div id="journalContainer" class="space-y-0">
-            <p class="text-zinc-300 text-xs italic tracking-widest">正在检索档案库...</p>
+            <p class="text-zinc-300 text-xs italic tracking-widest uppercase">正在检索档案库 / RETRIEVING ARCHIVES...</p>
         </div>
 
     </main>
@@ -82,61 +92,117 @@
         <div class="flex justify-between items-center mb-20">
             <button onclick="closeEditor()" class="text-[11px] font-black tracking-widest btn-press">← 取消编辑 / EXIT</button>
             <div class="flex gap-6">
-                <button onclick="saveDraft()" class="text-[11px] font-bold border border-zinc-200 px-8 py-3 btn-press">暂存草稿</button>
-                <button onclick="publishPost()" class="bg-black text-white px-10 py-3 text-[11px] font-black btn-press uppercase">发布至官网</button>
+                <button id="saveDraftBtn" class="text-[11px] font-bold border border-zinc-200 px-8 py-3 btn-press">暂存草稿</button>
+                <button id="publishBtn" onclick="publishPost()" class="bg-black text-white px-10 py-3 text-[11px] font-black btn-press uppercase">发布至官网</button>
             </div>
         </div>
         
-        <div class="max-w-4xl mx-auto w-full space-y-12">
+        <div class="max-w-4xl mx-auto w-full space-y-12 pb-20">
+            <div class="space-y-4">
+                <p class="text-[10px] font-black text-zinc-400 uppercase tracking-widest">CHAPTER COVER / 文章封面</p>
+                <div class="cover-dropzone" onclick="document.getElementById('coverInput').click()">
+                    <img id="coverPreview" class="hidden">
+                    <div id="coverPlaceholder" class="text-center">
+                        <p class="text-[10px] font-bold text-zinc-300 uppercase tracking-widest">点击同步高清封面图至云端</p>
+                    </div>
+                </div>
+                <input type="file" id="coverInput" class="hidden" accept="image/*" onchange="handleCoverUpload(this)">
+            </div>
+
             <div class="border-b border-black pb-4">
-                <p class="text-[10px] font-black text-zinc-400 mb-2">文章分类</p>
+                <p class="text-[10px] font-black text-zinc-400 mb-2 uppercase">CATEGORY / 分类</p>
                 <select id="postCategory" class="w-full text-sm font-bold bg-transparent outline-none cursor-pointer">
                     <option>匠心工艺</option><option>品牌动态</option><option>穿搭志</option>
                 </select>
             </div>
+            
             <input type="text" id="postTitle" placeholder="在此处输入章节标题..." class="w-full text-5xl font-black border-none outline-none placeholder:text-zinc-100">
             <textarea id="postContent" class="w-full min-h-[500px] text-xl leading-relaxed outline-none placeholder:text-zinc-100" placeholder="开始您的品牌叙事..."></textarea>
         </div>
     </div>
 
     <script>
-        // 模拟已有的日志数据
-        let journals = [
-            { id: 1, title: '桑蚕丝的千年呼吸：工艺背后的哲学', date: '2026.02.05', cat: '匠心工艺', status: '已发布' },
-            { id: 2, title: '2026 春夏“幻影”系列秀场直击', date: '2026.01.20', cat: '品牌动态', status: '已发布' },
-            { id: 3, title: '真丝叠穿术：冬季优雅的保密协议', date: '2026.01.12', cat: '穿搭志', status: '草稿' }
-        ];
+        // --- 核心配置 ---
+        const CLOUD_NAME = "dbyud7vlz";
+        const UPLOAD_PRESET = "mws_assets";
 
+        let journals = [];
         let activeFilter = 'ALL';
+        let currentCoverUrl = "";
 
-        // 渲染列表函数：增加交互动画反馈
+        window.onload = loadJournals;
+
+        // 加载真实后端数据
+        async function loadJournals() {
+            try {
+                const res = await fetch('/api/journal');
+                journals = await res.json();
+                renderList(journals);
+            } catch (err) {
+                console.error("加载失败:", err);
+            }
+        }
+
+        // --- 云端上传工具 ---
+        async function handleCoverUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const publishBtn = document.getElementById('publishBtn');
+            publishBtn.innerText = "同步云端中...";
+            publishBtn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', UPLOAD_PRESET);
+
+            try {
+                const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                currentCoverUrl = data.secure_url;
+
+                // 预览渲染
+                const img = document.getElementById('coverPreview');
+                img.src = currentCoverUrl;
+                img.classList.remove('hidden');
+                document.getElementById('coverPlaceholder').classList.add('hidden');
+            } catch (err) {
+                alert("云端同步失败");
+            } finally {
+                publishBtn.innerText = "发布至官网";
+                publishBtn.disabled = false;
+            }
+        }
+
         function renderList(data) {
             const container = document.getElementById('journalContainer');
             if (data.length === 0) {
-                container.innerHTML = `<p class="py-20 text-zinc-300 text-sm tracking-widest text-center border-t border-zinc-100">未找到相关档案记录</p>`;
+                container.innerHTML = `<p class="py-20 text-zinc-300 text-sm tracking-widest text-center border-t border-zinc-100 uppercase">Archive Empty / 暂无叙事记录</p>`;
                 return;
             }
             container.innerHTML = data.map((item, idx) => `
-                <div class="journal-row flex items-center py-10" onclick="editPost(${item.id})">
+                <div class="journal-row flex items-center py-10 group">
                     <div class="w-20 text-[10px] font-black text-zinc-200">#0${item.id}</div>
                     <div class="flex-1 px-6">
                         <h3 class="text-xl font-black tracking-widest">${item.title}</h3>
-                        <p class="text-[9px] text-zinc-400 mt-2 font-bold uppercase tracking-[0.2em]">FILE DATE: ${item.date}</p>
+                        <p class="text-[9px] text-zinc-400 mt-2 font-bold uppercase tracking-[0.2em]">FILE DATE: ${item.date || 'UNSET'}</p>
                     </div>
-                    <div class="w-32 text-[10px] font-black uppercase tracking-widest">${item.cat}</div>
+                    <div class="w-32 text-[10px] font-black uppercase tracking-widest">${item.category}</div>
                     <div class="w-32">
                         <span class="text-[9px] font-black ${item.status === '已发布' ? 'bg-black text-white' : 'border border-zinc-200 text-zinc-400'} px-3 py-1 uppercase">
                             ${item.status}
                         </span>
                     </div>
                     <div class="w-40 text-right">
-                        <button class="text-[10px] font-black text-red-600 opacity-0 group-hover:opacity-100 transition-opacity" onclick="deleteItem(${item.id}, event)">删除</button>
+                        <button class="text-[10px] font-black text-red-600 opacity-0 group-hover:opacity-100 transition-opacity" onclick="deleteItem(${item.id}, event)">删除档案</button>
                     </div>
                 </div>
             `).join('');
         }
 
-        // 分类切换逻辑
         function switchCategory(cat) {
             activeFilter = cat;
             document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.remove('active'));
@@ -144,21 +210,22 @@
             handleLiveSearch();
         }
 
-        // 搜索引擎实时逻辑
         function handleLiveSearch() {
             const query = document.getElementById('journalSearch').value.toLowerCase();
             const filtered = journals.filter(j => {
-                const matchQuery = j.title.toLowerCase().includes(query) || j.date.includes(query);
-                const matchCat = activeFilter === 'ALL' || j.cat === activeFilter;
+                const matchQuery = (j.title || "").toLowerCase().includes(query);
+                const matchCat = activeFilter === 'ALL' || j.category === activeFilter;
                 return matchQuery && matchCat;
             });
             renderList(filtered);
         }
 
-        // 编辑器交互逻辑
         function openEditor() {
             document.getElementById('postTitle').value = "";
             document.getElementById('postContent').value = "";
+            document.getElementById('coverPreview').classList.add('hidden');
+            document.getElementById('coverPlaceholder').classList.remove('hidden');
+            currentCoverUrl = "";
             document.getElementById('editorOverlay').classList.add('active');
             document.body.style.overflow = 'hidden';
         }
@@ -168,34 +235,40 @@
             document.body.style.overflow = 'auto';
         }
 
-        function publishPost() {
+        async function publishPost() {
             const title = document.getElementById('postTitle').value;
-            if(!title) return alert("请输入标题");
-            
-            // 模拟添加到列表
-            const newPost = {
-                id: journals.length + 1,
-                title: title,
-                date: new Date().toLocaleDateString(),
-                cat: document.getElementById('postCategory').value,
-                status: '已发布'
-            };
-            journals.unshift(newPost);
-            renderList(journals);
-            closeEditor();
-            alert("文章已成功推送至官网。");
-        }
+            const content = document.getElementById('postContent').value;
+            if(!title || !content) return alert("请完整填写标题与叙事内容");
 
-        function deleteItem(id, e) {
-            e.stopPropagation();
-            if(confirm("确认永久销毁该叙事档案吗？")) {
-                journals = journals.filter(j => j.id !== id);
-                renderList(journals);
+            const postData = {
+                title: title,
+                content: content,
+                category: document.getElementById('postCategory').value,
+                status: '已发布',
+                // 这里将云端封面图存入
+                cover: currentCoverUrl 
+            };
+
+            const res = await fetch('/api/journal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(postData)
+            });
+
+            if(res.ok) {
+                alert("章节已成功入库。");
+                loadJournals();
+                closeEditor();
             }
         }
 
-        // 初始化加载
-        window.onload = () => renderList(journals);
+        async function deleteItem(id, e) {
+            e.stopPropagation();
+            if(confirm("确认永久销毁该叙事档案吗？此操作不可逆。")) {
+                const res = await fetch(`/api/journal/${id}`, { method: 'DELETE' });
+                if(res.ok) loadJournals();
+            }
+        }
     </script>
 </body>
 </html>
