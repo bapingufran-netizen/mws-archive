@@ -138,6 +138,47 @@ app.post('/api/settings', adminGuard, (req, res) => { // 🔒 加锁
     res.json({ success: true });
 });
 
+// --- 3. 原有功能 API (对应管理操作已加锁) ---
+
+// ... 前面的代码保持不变 ...
+
+app.get('/api/settings', (req, res) => {
+    db.all("SELECT * FROM settings", [], (err, rows) => {
+        const config = {};
+        if (rows) {
+            rows.forEach(row => config[row.key] = row.value);
+        }
+        res.json(config);
+    });
+});
+
+// 精准修改：确保支持单条或多条设置的批量更新
+app.post('/api/settings', adminGuard, (req, res) => { // 🔒 保持原有加锁
+    const settings = req.body;
+    
+    // 使用事务处理，确保数据一致性
+    db.serialize(() => {
+        const stmt = db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)");
+        
+        Object.keys(settings).forEach(key => {
+            // 只有当 value 不为 undefined 时才写入
+            if (settings[key] !== undefined) {
+                stmt.run(key, String(settings[key])); 
+            }
+        });
+        
+        stmt.finalize((err) => {
+            if (err) {
+                console.error("Settings Update Error:", err);
+                return res.status(500).json({ success: false, message: "数据库写入失败" });
+            }
+            res.json({ success: true, msg: "视觉引擎配置已同步" });
+        });
+    });
+});
+
+// ... 后面的代码（login, PORT, hub等）保持不变 ...
+
 app.post('/api/login', (req, res) => {
     const { email, password } = req.body;
     db.get("SELECT * FROM users WHERE (email = ? OR nickname = ?) AND password = ?", [email, email, password], (err, user) => {
@@ -182,3 +223,4 @@ app.get('/api/stats', adminGuard, (req, res) => { // 🔒 加锁
         res.json(rows);
     });
 });
+
