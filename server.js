@@ -128,3 +128,30 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 M.W.S System Running on Port ${PORT}`);
 });
+
+// 1. 新增底部图上传函数
+function openFooterUpload() {
+    cloudinary.openUploadWidget({
+        cloudName: cloudName, uploadPreset: uploadPreset, cropping: true
+    }, (error, result) => {
+        if (!error && result.event === "success") {
+            document.getElementById('footer-img-input').value = result.info.secure_url;
+        }
+    });
+}
+
+// 2. 更新原有的 saveAllConfigs 函数中的 payload 部分
+async function saveAllConfigs() {
+    // ... 前面的代码保持不变 ...
+    const payload = {
+        "hero_banner": document.getElementById('hero-url-input').value,
+        "hero_autoplay": document.getElementById('autoPlay').checked ? "on" : "off",
+        "show_notice": document.getElementById('showNotice').checked ? "true" : "false",
+        "notice_content": document.getElementById('noticeContent').value,
+        // ✨ 新增以下三行数据同步
+        "footer_title": document.getElementById('footer-title-input').value,
+        "footer_desc": document.getElementById('footer-desc-input').value,
+        "footer_img": document.getElementById('footer-img-input').value
+    };
+    // ... 后面的 fetch 调用保持不变 ...
+}
