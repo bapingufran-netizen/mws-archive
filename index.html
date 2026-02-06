@@ -266,24 +266,23 @@
         window.onload = () => { loadProducts(); checkAuth(); };
 
         // 在页面加载时自动获取后台配置的大图
-async function applyLiveSettings() {
-    try {
+        
+    async function applyLiveSettings() {
+        try {
         const res = await fetch('/api/settings');
         const config = await res.json();
+        
+        console.log("收到后台配置:", config); // 在 F12 控制台能看到这个
 
-        // 1. 更新首页大图 (Banner)
-        if (config.hero_banner) {
-            const heroImg = document.querySelector('.hero-banner img');
-            if (heroImg) heroImg.src = config.hero_banner;
-        }
-
-        // 2. 更新公告栏 (如果有内容)
-        if (config.show_notice === 'true' && config.notice_content) {
-            // 这里可以添加展示公告栏的逻辑
-            console.log("公告内容:", config.notice_content);
+        if (config && config.hero_banner) {
+            const heroImg = document.querySelector('.hero-video-bg');
+            if (heroImg) {
+                heroImg.src = config.hero_banner;
+                heroImg.style.opacity = "1"; // 确保它是显示的
+            }
         }
     } catch (err) {
-        console.error("加载配置失败:", err);
+        console.error("首页视觉加载失败:", err);
     }
 }
 
@@ -296,4 +295,5 @@ window.addEventListener('DOMContentLoaded', () => {
     </script>
 </body>
 </html>
+
 
