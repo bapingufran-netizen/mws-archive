@@ -149,7 +149,6 @@
     <script>
         const CLOUD_NAME = "dbyud7vlz";
         const UPLOAD_PRESET = "mws_assets";
-        // ✨ 安全钥匙：须与 server.js 中的 MWS_ADMIN_KEY 一致
         const MWS_AUTH_KEY = "MWS2026"; 
 
         let mainImgUrl = "", detailImages = [], skuMatrix = {}, activeSpecs = [], currentEditId = null;
@@ -172,7 +171,6 @@
             renderDetailPreviews();
         }
 
-        // 云端上传逻辑
         async function uploadFile(file) {
             const formData = new FormData();
             formData.append('file', file);
@@ -210,7 +208,6 @@
             });
         }
 
-        // 规格管理逻辑
         function buildTags() {
             const val = document.getElementById('attr-input').value;
             const tags = val.split(',').map(v => v.trim()).filter(v => v);
@@ -247,7 +244,6 @@
 
         function syncAllPrices(val) { activeSpecs.forEach(s => { if(skuMatrix[s]) skuMatrix[s].price = val; }); renderMatrix(); }
 
-        // 数据存储 (✨ 已配钥匙)
         async function submitProduct(status = '已发布') {
             const name = document.getElementById('p-name').value;
             if(!name || !mainImgUrl) return alert("请完整填写品名并上传主图");
@@ -264,7 +260,6 @@
                 detail_images: JSON.stringify(detailImages) 
             };
             
-            // ✨ 在 Headers 中发送安全钥匙
             const res = await fetch('/api/products', { 
                 method: 'POST', 
                 headers: { 
@@ -284,7 +279,6 @@
             }
         }
 
-        // 列表与列表操作
         async function refreshInventory() {
             const res = await fetch('/api/products');
             const data = await res.json();
@@ -325,7 +319,6 @@
             renderDetailPreviews(); buildTags(); renderMatrix();
         }
 
-        // ✨ 删除逻辑已配钥匙
         async function deleteProduct(id, e) {
             e.stopPropagation();
             if(!confirm("确认永久删除此作品档案？")) return;
@@ -339,14 +332,42 @@
             refreshInventory();
         }
 
+        /* 🚀 核心修复部分：克隆后立即同步后端 */
         async function duplicateProduct(id, e) {
             e.stopPropagation();
             const res = await fetch('/api/products');
             const list = await res.json();
             const item = list.find(p => p.id === id);
-            currentEditId = null;
-            document.getElementById('p-name').value = item.name + " (副本)";
-            alert("已克隆资料，修改后点击发布即可保存为新产品");
+            
+            // 1. 准备克隆数据包（去除 ID 后端会自动生成新 ID）
+            const payload = { 
+                id: null, 
+                name: item.name + " (COPY)", 
+                price: item.price, 
+                image: item.image, 
+                category: item.category, 
+                description: item.description, 
+                status: '草稿', // 设为草稿以便区分
+                skus: item.skus, 
+                detail_images: item.detail_images 
+            };
+
+            // 2. 发送存储请求，解决“克隆无法生成新列表”的问题
+            const saveRes = await fetch('/api/products', { 
+                method: 'POST', 
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'x-mws-auth': MWS_AUTH_KEY 
+                }, 
+                body: JSON.stringify(payload) 
+            });
+
+            if(saveRes.ok) { 
+                alert("克隆成功：已生成新草稿"); 
+                refreshInventory(); // 刷新列表
+            } else {
+                alert("同步失败，请检查后端引擎状态");
+            }
         }
     </script>
 </body>
