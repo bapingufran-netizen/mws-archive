@@ -141,3 +141,80 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 M.W.S System Running on Port ${PORT}`);
 });
+
+// ==========================================
+// 1. 数据中枢数据库表初始化 (追加)
+// ==========================================
+db.serialize(() => {
+    // 订单表：涵盖下单时间、地址、物流、支付状态、规格编码等
+    db.run(`CREATE TABLE IF NOT EXISTS orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_no TEXT,              -- 订单号
+        customer_name TEXT,         -- 联系人
+        phone TEXT,                 -- 电话
+        address TEXT,               -- 地址
+        product_name TEXT,          -- 商品名称
+        spec_info TEXT,             -- 规格 (颜色/尺寸)
+        sku_code TEXT,              -- 商家编码
+        total_amount REAL,          -- 订单金额
+        pay_status TEXT DEFAULT '未支付', -- 支付状态
+        ship_status TEXT DEFAULT '待发货', -- 发货状态
+        logistics_no TEXT,          -- 物流单号
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+
+    // 会员/用户资料表：涵盖年龄、累计消费、账号密码
+    db.run(`CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE,       -- 登录账号
+        password TEXT,              -- 密码
+        nickname TEXT,              -- 会员昵称
+        age INTEGER,                -- 年龄
+        total_spent REAL DEFAULT 0, -- 累计消费金额
+        last_login DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+});
+
+// ==========================================
+// 2. 数据中枢 API 接口 (追加)
+// ==========================================
+
+// --- 订单管理接口 ---
+app.get('/api/orders', (req, res) => {
+    db.all("SELECT * FROM orders ORDER BY created_at DESC", [], (err, rows) => {
+        res.json(rows);
+    });
+});
+
+app.post('/api/orders/update', (req, res) => {
+    const { id, pay_status, ship_status, logistics_no } = req.body;
+    db.run("UPDATE orders SET pay_status = ?, ship_status = ?, logistics_no = ? WHERE id = ?",
+        [pay_status, ship_status, logistics_no, id], (err) => {
+            res.json({ success: !err });
+        });
+});
+
+// --- 会员管理接口 ---
+app.get('/api/users', (req, res) => {
+    db.all("SELECT id, username, nickname, age, total_spent, created_at FROM users", [], (err, rows) => {
+        res.json(rows);
+    });
+});
+
+// --- 销售报表统计接口 ---
+app.get('/api/stats', (req, res) => {
+    const statsQuery = `
+        SELECT 
+            date(created_at) as date,
+            COUNT(id) as order_count,
+            SUM(total_amount) as daily_revenue
+        FROM orders 
+        WHERE pay_status = '已支付'
+        GROUP BY date(created_at)
+        ORDER BY date DESC LIMIT 30
+    `;
+    db.all(statsQuery, [], (err, rows) => {
+        res.json(rows);
+    });
+});
