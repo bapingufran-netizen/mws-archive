@@ -2,321 +2,86 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>M.W.S STUDIO | ADMIN</title>
+    <title>M.W.S 工作室 | 档案与产品管理</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background: #fff; color: #000; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', "Microsoft YaHei", sans-serif; background: #fafafa; color: #000; }
         .bold-text { font-weight: 700 !important; letter-spacing: 0.1em; }
-        .studio-input { border-bottom: 2px solid #f0f0f0; padding: 15px 0; outline: none; transition: 0.3s; width: 100%; background: transparent; }
+        .studio-input { border-bottom: 2px solid #f0f0f0; padding: 12px 0; outline: none; transition: 0.3s; width: 100%; background: transparent; font-size: 14px; }
         .studio-input:focus { border-bottom-color: #000; }
-        ::-webkit-scrollbar { width: 0px; }
-        .inventory-scroll { height: calc(100vh - 350px); overflow-y: auto; }
+        .inventory-scroll { height: calc(100vh - 250px); overflow-y: auto; scrollbar-width: none; }
         .main-card { background: #fff; border-radius: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.03); }
-        .nav-item { padding: 12px 20px; border-radius: 15px; cursor: pointer; transition: 0.3s; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
-        .nav-item.active { background: #000; color: #fff; }
-        .view-section { display: none; }
-        .view-section.active { display: block; }
+        .status-tag { font-size: 9px; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; font-weight: 900; }
+        .tag-draft { background: #eee; color: #999; }
+        .tag-live { background: #000; color: #fff; }
+        ::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="overflow-hidden bg-[#fafafa]">
 
     <div class="flex h-screen">
-        <aside class="w-80 border-r border-zinc-100 flex flex-col p-8 bg-white">
-            <div class="mb-12">
-                <h1 class="text-[16px] bold-text tracking-[0.4em] mb-2 uppercase">M.W.S STUDIO</h1>
-                <p class="text-[10px] text-zinc-300 font-bold uppercase tracking-widest">Management System</p>
+        <aside class="w-96 border-r border-zinc-100 flex flex-col p-8 bg-white">
+            <div class="mb-10">
+                <h1 class="text-xl font-black tracking-tighter mb-1">工作室管理</h1>
+                <p class="text-[10px] text-zinc-300 font-bold uppercase tracking-widest">M.W.S STUDIO / ARCHIVE</p>
             </div>
 
-            <nav class="space-y-2 mb-10">
-                <div onclick="switchView('archive')" id="nav-archive" class="nav-item active">Archives / 档案管理</div>
-                <div onclick="switchView('orders')" id="nav-orders" class="nav-item">Orders / 订单管理</div>
-                <div onclick="logout()" class="nav-item text-red-400 mt-10">Logout / 退出</div>
-            </nav>
-
-            <div id="sidebar-inventory" class="flex-1 min-h-0">
-                <div class="flex justify-between items-center mb-6 border-b pb-4">
-                    <span class="text-[11px] bold-text uppercase tracking-widest">List / 档案列表</span>
-                    <button onclick="location.reload()" class="text-xl">＋</button>
+            <div class="flex-1 min-h-0">
+                <div class="flex justify-between items-center mb-6">
+                    <span class="text-[11px] font-black uppercase tracking-widest text-zinc-400">产品列表 / PRODUCT LIST</span>
+                    <button onclick="resetEditor()" class="w-8 h-8 bg-black text-white rounded-full text-xl flex items-center justify-center hover:rotate-90 transition-all">+</button>
                 </div>
-                <div id="inventory-list" class="inventory-scroll space-y-4"></div>
+                <div id="inventory-list" class="inventory-scroll space-y-3"></div>
             </div>
+
+            <button onclick="location.href='admin-console.html'" class="mt-6 text-[10px] font-bold text-zinc-400 hover:text-black transition text-left uppercase tracking-widest">← 返回控制台 / BACK</button>
         </aside>
 
         <main class="flex-1 overflow-y-auto p-12">
             <div class="max-w-6xl mx-auto">
-                
-                <section id="view-archive" class="view-section active animate__animated animate__fadeIn">
-                    <div class="main-card p-12 space-y-12">
-                        <section class="grid grid-cols-1 lg:grid-cols-2 gap-16">
-                            <div id="drop-zone" class="aspect-[3/4] bg-zinc-50 rounded-[2.5rem] border-4 border-dashed border-zinc-100 flex flex-col items-center justify-center cursor-pointer relative overflow-hidden group hover:border-black transition-all">
+                <div class="main-card p-10">
+                    <div class="grid grid-cols-12 gap-12 mb-16">
+                        <div class="col-span-5">
+                            <label class="text-[11px] font-black text-zinc-400 uppercase tracking-widest block mb-4">封面主图 / MAIN COVER</label>
+                            <div id="drop-zone" onclick="document.getElementById('main-file').click()" class="aspect-[3/4] bg-zinc-50 rounded-[2rem] border-2 border-dashed border-zinc-100 flex flex-col items-center justify-center cursor-pointer relative overflow-hidden group hover:border-black transition-all">
                                 <img id="main-preview" class="hidden w-full h-full object-cover">
                                 <div id="placeholder" class="text-center">
-                                    <div class="text-4xl mb-4 text-zinc-200">↑</div>
-                                    <p class="text-[12px] bold-text text-zinc-400 uppercase tracking-widest">Upload Image</p>
+                                    <p class="text-[10px] font-black text-zinc-300 uppercase">点击同步云端主图</p>
                                 </div>
                                 <input type="file" id="main-file" hidden onchange="handleMainUpload(this)">
                             </div>
+                        </div>
 
-                            <div class="space-y-8">
-                                <div class="space-y-2">
-                                    <label class="text-[11px] bold-text text-zinc-400 uppercase tracking-widest">Item Name</label>
-                                    <input type="text" id="p-name" class="studio-input text-[18px]" placeholder="请输入品名...">
+                        <div class="col-span-7 space-y-8">
+                            <div>
+                                <label class="text-[11px] font-black text-zinc-400 uppercase tracking-widest block mb-2">产品名称 / ITEM NAME</label>
+                                <input type="text" id="p-name" class="studio-input text-xl font-bold" placeholder="请输入品名...">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-8">
+                                <div>
+                                    <label class="text-[11px] font-black text-zinc-400 uppercase tracking-widest block mb-2">基础定价 / BASE PRICE (¥)</label>
+                                    <input type="number" id="p-price" class="studio-input" placeholder="0.00" oninput="syncAllPrices(this.value)">
                                 </div>
-                                <div class="grid grid-cols-2 gap-8">
-                                    <input type="number" id="p-price" class="studio-input" placeholder="Price (¥)" oninput="syncAllPrices(this.value)">
+                                <div>
+                                    <label class="text-[11px] font-black text-zinc-400 uppercase tracking-widest block mb-2">所属系列 / COLLECTION</label>
                                     <select id="p-category" class="studio-input">
-                                        <option value="Silk Series">Silk Series</option>
-                                        <option value="Atelier">Atelier</option>
-                                        <option value="Archive">Archive</option>
+                                        <option value="Silk Series">真丝系列 / Silk Series</option>
+                                        <option value="Atelier">手工坊 / Atelier</option>
+                                        <option value="Archive">经典档案 / Archive</option>
                                     </select>
                                 </div>
-                                <textarea id="p-desc" class="studio-input h-32 resize-none" placeholder="Description..."></textarea>
-                                
-                                <div class="pt-6 border-t border-zinc-50">
-                                    <label class="text-[11px] bold-text text-zinc-400 uppercase tracking-widest block mb-4">Detail Images</label>
-                                    <div class="grid grid-cols-4 gap-4" id="detail-preview-grid">
-                                        <div onclick="document.getElementById('detail-files').click()" class="aspect-square bg-zinc-50 border-2 border-dashed border-zinc-200 rounded-[1.5rem] flex items-center justify-center cursor-pointer hover:border-black transition text-2xl text-zinc-300">+</div>
-                                    </div>
-                                    <input type="file" id="detail-files" hidden multiple onchange="handleDetailUpload(this)">
-                                </div>
                             </div>
-                        </section>
 
-                        <section class="border-t pt-10 space-y-6">
-                            <div class="flex justify-between items-center">
-                                <h3 class="text-[14px] bold-text uppercase">Matrix / 规格管理</h3>
-                                <div class="flex gap-4">
-                                    <input type="text" id="attr-input" placeholder="S, M, L..." class="border-b-2 outline-none px-4 py-1 font-bold w-40 text-xs">
-                                    <button onclick="buildTags()" class="bg-zinc-100 px-4 py-2 rounded-full text-[9px] bold-text">生成标签</button>
-                                </div>
+                            <div>
+                                <label class="text-[11px] font-black text-zinc-400 uppercase tracking-widest block mb-2">品牌叙事描述 / DESCRIPTION</label>
+                                <textarea id="p-desc" class="studio-input h-32 resize-none" placeholder="为此作品撰写叙事内容，将展示在产品详情页..."></textarea>
                             </div>
-                            <div id="tags-area" class="min-h-[50px] bg-zinc-50/50 p-6 rounded-3xl"></div>
-                            <table class="w-full text-left">
-                                <thead class="text-[10px] bold-text text-zinc-400 uppercase border-b">
-                                    <tr><th class="pb-4">Variant</th><th class="pb-4">Price</th><th class="pb-4">Stock</th><th class="pb-4">SKU</th></tr>
-                                </thead>
-                                <tbody id="sku-body"></tbody>
-                            </table>
-                        </section>
 
-                        <button onclick="submitProduct()" id="publish-btn" class="w-full bg-black text-white py-10 rounded-3xl text-[16px] bold-text uppercase tracking-[0.8em] shadow-2xl transition-all">Confirm & Publish</button>
-                    </div>
-                </section>
-
-                <section id="view-orders" class="view-section animate__animated animate__fadeIn">
-                    <div class="main-card p-12">
-                        <h2 class="text-xl bold-text uppercase mb-10 tracking-widest">Customer Orders / 客户订单</h2>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left">
-                                <thead class="text-[11px] bold-text text-zinc-400 uppercase border-b">
-                                    <tr><th class="pb-6">Order ID</th><th class="pb-6">Product</th><th class="pb-6">Variant</th><th class="pb-6">Contact</th><th class="pb-6">Time</th></tr>
-                                </thead>
-                                <tbody id="orders-body" class="text-[13px] font-medium">
-                                    </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-
-            </div>
-        </main>
-    </div>
-
-    <script>
-        // --- ADMIN 鉴权门禁 ---
-        (function checkAuth() {
-            const token = localStorage.getItem('mws_admin_token');
-            if (!token || !token.startsWith('AUTHORIZED_')) { window.location.href = 'login.html'; }
-        })();
-
-        function logout() { localStorage.removeItem('mws_admin_token'); window.location.href = 'login.html'; }
-
-        // --- 视图切换 ---
-        function switchView(view) {
-            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            document.getElementById(`view-${view}`).classList.add('active');
-            document.getElementById(`nav-${view}`).classList.add('active');
-            if (view === 'orders') loadOrders();
-        }
-
-        // --- ✨ Cloudinary 工具函数 (新增) ---
-        async function uploadToCloudinary(file) {
-            const CLOUD_NAME = "dbyud7vlz";
-            const UPLOAD_PRESET = "mws_assets";
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('upload_preset', UPLOAD_PRESET);
-
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
-                method: 'POST',
-                body: formData
-            });
-            const data = await res.json();
-            if (!data.secure_url) throw new Error("Cloudinary sync failed");
-            return data.secure_url;
-        }
-
-        // 变量初始化
-        let mainImgUrl = "", detailImages = [], skuMatrix = {}, activeSpecs = [], currentEditId = null;
-
-        window.onload = () => {
-            refreshInventory();
-            document.getElementById('drop-zone').onclick = () => document.getElementById('main-file').click();
-        };
-
-        // --- ✨ 核心上传逻辑修改 (由 Base64 改为 Cloudinary URL) ---
-        async function handleMainUpload(input) {
-            const file = input.files[0]; if (!file) return;
-            
-            // UI 反馈
-            const btn = document.getElementById('publish-btn');
-            btn.innerText = "UPDATING IMAGE TO CLOUD...";
-            btn.disabled = true;
-
-            try {
-                mainImgUrl = await uploadToCloudinary(file);
-                document.getElementById('main-preview').src = mainImgUrl;
-                document.getElementById('main-preview').classList.remove('hidden');
-                document.getElementById('placeholder').classList.add('hidden');
-                btn.innerText = "CONFIRM & PUBLISH";
-            } catch(e) {
-                alert("主图云端同步失败，请检查网络");
-            } finally {
-                btn.disabled = false;
-            }
-        }
-
-        async function handleDetailUpload(input) {
-            const files = Array.from(input.files);
-            const btn = document.getElementById('publish-btn');
-            btn.innerText = "UPDATING DETAILS...";
-            btn.disabled = true;
-
-            try {
-                for (const f of files) { 
-                    const url = await uploadToCloudinary(f);
-                    detailImages.push(url); 
-                }
-                renderDetailPreviews();
-            } catch(e) {
-                alert("详情图部分同步失败");
-            } finally {
-                btn.innerText = "CONFIRM & PUBLISH";
-                btn.disabled = false;
-            }
-        }
-
-        function renderDetailPreviews() {
-            const grid = document.getElementById('detail-preview-grid');
-            grid.innerHTML = `<div onclick="document.getElementById('detail-files').click()" class="aspect-square bg-zinc-50 border-2 border-dashed border-zinc-200 rounded-[1.5rem] flex items-center justify-center cursor-pointer hover:border-black transition text-2xl text-zinc-300">+</div>`;
-            detailImages.forEach((src, i) => {
-                const div = document.createElement('div');
-                div.className = "relative aspect-square rounded-[1.5rem] overflow-hidden bg-zinc-100";
-                div.innerHTML = `<img src="${src}" class="w-full h-full object-cover"><div onclick="detailImages.splice(${i},1);renderDetailPreviews()" class="absolute top-2 right-2 bg-black/50 text-white w-6 h-6 rounded-full flex items-center justify-center cursor-pointer text-[10px]">✕</div>`;
-                grid.appendChild(div);
-            });
-        }
-
-        // --- 档案管理逻辑 (保持原状) ---
-        function buildTags() {
-            const val = document.getElementById('attr-input').value;
-            const tags = val.split(',').map(v => v.trim()).filter(v => v);
-            const area = document.getElementById('tags-area');
-            area.innerHTML = "";
-            tags.forEach(t => {
-                const span = document.createElement('div');
-                span.className = activeSpecs.includes(t) ? "px-6 py-2 border-2 border-black bg-black text-white rounded-full text-[10px] bold-text uppercase cursor-pointer inline-block mr-2" : "px-6 py-2 border-2 border-zinc-100 rounded-full text-[10px] bold-text uppercase cursor-pointer inline-block mr-2";
-                span.innerText = t;
-                span.onclick = () => { if(activeSpecs.includes(t)) activeSpecs=activeSpecs.filter(s=>s!==t); else activeSpecs.push(t); buildTags(); renderMatrix(); };
-                area.appendChild(span);
-            });
-        }
-
-        function renderMatrix() {
-            const tbody = document.getElementById('sku-body'); tbody.innerHTML = "";
-            activeSpecs.forEach(spec => {
-                if (!skuMatrix[spec]) skuMatrix[spec] = { price: document.getElementById('p-price').value || 0, stock: 99, sku: `MWS-${spec.toUpperCase()}` };
-                const row = document.createElement('tr');
-                row.innerHTML = `<td class="py-6 font-bold uppercase">${spec}</td>
-                    <td><input type="number" class="bg-zinc-50 p-3 rounded-xl font-bold w-24" value="${skuMatrix[spec].price}" oninput="skuMatrix['${spec}'].price=this.value"></td>
-                    <td><input type="number" class="bg-zinc-50 p-3 rounded-xl font-bold w-20" value="${skuMatrix[spec].stock}" oninput="skuMatrix['${spec}'].stock=this.value"></td>
-                    <td><input type="text" class="bg-zinc-50 p-3 rounded-xl font-bold" value="${skuMatrix[spec].sku}" oninput="skuMatrix['${spec}'].sku=this.value"></td>`;
-                tbody.appendChild(row);
-            });
-        }
-
-        function syncAllPrices(val) {
-            activeSpecs.forEach(spec => {
-                if (skuMatrix[spec]) skuMatrix[spec].price = val;
-            });
-            renderMatrix();
-        }
-
-        async function submitProduct() {
-            const payload = { 
-                id: currentEditId, 
-                name: document.getElementById('p-name').value, 
-                price: document.getElementById('p-price').value, 
-                image: mainImgUrl, // 现在存的是 URL
-                category: document.getElementById('p-category').value, 
-                description: document.getElementById('p-desc').value, 
-                skus: JSON.stringify(skuMatrix), 
-                detail_images: JSON.stringify(detailImages) 
-            };
-            const res = await fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            if((await res.json()).success) { alert("Successfully Archived to Cloud"); location.reload(); }
-        }
-
-        async function refreshInventory() {
-            const res = await fetch('/api/products');
-            const data = await res.json();
-            document.getElementById('inventory-list').innerHTML = data.map(p => `<div onclick="loadToEditor(${p.id})" class="flex items-center gap-4 p-4 bg-zinc-50 rounded-2xl cursor-pointer hover:bg-black hover:text-white transition-all"><img src="${p.image}" class="w-10 h-14 object-cover rounded-lg"><div class="flex-1 truncate text-[11px] bold-text uppercase">${p.name}</div></div>`).join('');
-        }
-
-        async function loadToEditor(id) {
-            const res = await fetch('/api/products');
-            const item = (await res.json()).find(p => p.id === id);
-            currentEditId = id; 
-            document.getElementById('p-name').value = item.name; 
-            document.getElementById('p-price').value = item.price; 
-            document.getElementById('p-category').value = item.category; 
-            document.getElementById('p-desc').value = item.description;
-            mainImgUrl = item.image; 
-            document.getElementById('main-preview').src = item.image; 
-            document.getElementById('main-preview').classList.remove('hidden'); 
-            document.getElementById('placeholder').classList.add('hidden');
-            detailImages = JSON.parse(item.detail_images || "[]"); 
-            renderDetailPreviews();
-            skuMatrix = JSON.parse(item.skus || '{}'); 
-            activeSpecs = Object.keys(skuMatrix); 
-            buildTags(); 
-            renderMatrix();
-        }
-
-        // --- 订单加载逻辑 (保持原状) ---
-        async function loadOrders() {
-            try {
-                const res = await fetch('/api/orders');
-                const orders = await res.json();
-                document.getElementById('orders-body').innerHTML = orders.map(o => `
-                    <tr class="border-b border-zinc-50">
-                        <td class="py-6 text-zinc-400">#${o.id}</td>
-                        <td class="py-6 font-bold uppercase">${o.sku_code || 'Archive Item'}</td>
-                        <td class="py-6 font-bold uppercase">${o.spec_key || '-'}</td>
-                        <td class="py-6">
-                            <div class="font-bold">${o.customer_name}</div>
-                            <div class="text-[10px] text-zinc-400">${o.phone}</div>
-                        </td>
-                        <td class="py-6 text-zinc-400">${new Date(o.created_at).toLocaleDateString()}</td>
-                    </tr>
-                `).join('');
-            } catch(e) {
-                document.getElementById('orders-body').innerHTML = `<tr><td colspan="5" class="py-20 text-center text-zinc-300 font-bold uppercase tracking-widest">No order data found / 暂无订单数据</td></tr>`;
-            }
-        }
-    </script>
-</body>
-</html>
+                            <div>
+                                <label class="text-[11px] font-black text-zinc-400 uppercase tracking-widest block mb-4">细节展示图 / DETAILS</label>
+                                <div class="grid grid-cols-5 gap-3" id="detail-preview-grid">
+                                    <div onclick="document.getElementById('detail-files').click()" class="aspect-square bg-zinc-50 border border-dashed border-zinc-200 rounded-xl flex items-center justify-center cursor-pointer hover:border-black transition text-zinc-300">+</div>
+                                </div>
+                                <input type="file" id="detail-files" hidden multiple onchange="handleDetailUpload(this)">
