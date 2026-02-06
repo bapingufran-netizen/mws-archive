@@ -85,79 +85,100 @@
             </div>
     </main>
 
-    <script>
+<script>
+        // --- 核心配置 ---
         const cloudName = "dbyud7vlz"; 
         const uploadPreset = "aliang"; 
-        const ADMIN_KEY = "MWS2026"; // 后端定义的校验口令
+        const ADMIN_AUTH_KEY = "MWS2026"; // 必须与后端一致
 
-        // 1. 初始化上传窗口
+        // 1. Cloudinary 上传组件初始化
         function openUploadWidget() {
             cloudinary.openUploadWidget({
                 cloudName: cloudName,
                 uploadPreset: uploadPreset,
                 sources: ['local', 'url'],
+                showAdvancedOptions: false,
                 cropping: true,
                 multiple: false,
-                theme: "minimal"
+                theme: "minimal",
+                palette: {
+                    window: "#FFFFFF",
+                    sourceBg: "#FFFFFF",
+                    windowBorder: "#000000",
+                    tabIcon: "#000000",
+                    inactiveTabIcon: "#8E8E8E",
+                    menuIcons: "#000000",
+                    link: "#000000",
+                    action: "#000000",
+                    inProgress: "#000000",
+                    complete: "#000000",
+                    error: "#E41E1E",
+                    textDark: "#000000",
+                    textLight: "#FFFFFF"
+                }
             }, (error, result) => {
                 if (!error && result && result.event === "success") {
+                    // 自动将上传成功的 URL 写入输入框
                     document.getElementById('hero-url-input').value = result.info.secure_url;
                 }
             });
         }
 
-        // 2. 核心：保存所有配置到后端数据库
+        // 2. 核心保存函数：将所有变更同步到数据库
         async function saveAllConfigs() {
-            const btn = document.getElementById('save-btn');
+            const btn = event.target;
             const originalText = btn.innerText;
 
-            // 按钮反馈
-            btn.innerText = "正在部署至云端...";
-            btn.disabled = true;
-            btn.style.opacity = "0.5";
-
-            // 收集当前页面所有设置
-            const configData = {
+            // --- 采集页面数据 ---
+            const payload = {
                 "hero_banner": document.getElementById('hero-url-input').value,
                 "hero_autoplay": document.getElementById('autoPlay').checked ? "on" : "off",
                 "show_notice": document.getElementById('showNotice').checked ? "true" : "false",
-                "notice_content": document.getElementById('noticeContent').value
+                "notice_content": document.querySelector('textarea').value // 获取公告内容
             };
 
+            // UI 交互反馈：开始保存
+            btn.innerText = "正在部署变更...";
+            btn.style.opacity = "0.5";
+            btn.disabled = true;
+
             try {
-                // 发送真实的 API 请求
+                // 向后端 API 发送数据
                 const response = await fetch('/api/settings', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
-                        'x-mws-auth': ADMIN_KEY // 对应你 server.js 里的认证拦截
+                        'x-mws-auth': ADMIN_AUTH_KEY // 通过后端 adminGuard 校验
                     },
-                    body: JSON.stringify(configData)
+                    body: JSON.stringify(payload)
                 });
 
                 const result = await response.json();
 
                 if (result.success) {
+                    // 成功反馈
                     btn.innerText = "变更已全站生效";
                     btn.classList.replace('bg-black', 'bg-green-600');
                 } else {
-                    throw new Error(result.message || "认证失败");
+                    throw new Error("服务器拒绝保存");
                 }
             } catch (err) {
-                console.error(err);
-                btn.innerText = "保存失败：请检查网络或权限";
+                // 失败反馈
+                console.error("保存失败:", err);
+                btn.innerText = "部署失败：认证无效";
                 btn.classList.replace('bg-black', 'bg-red-600');
             }
 
-            // 恢复按钮
+            // 恢复按钮状态
             setTimeout(() => {
                 btn.innerText = originalText;
                 btn.classList.remove('bg-green-600', 'bg-red-600');
                 btn.classList.add('bg-black');
-                btn.disabled = false;
                 btn.style.opacity = "1";
+                btn.disabled = false;
             }, 2000);
         }
     </script>
 </body>
 </html>
+
