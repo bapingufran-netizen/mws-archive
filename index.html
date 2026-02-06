@@ -99,7 +99,7 @@
     </div>
 
     <section class="hero-banner relative overflow-hidden">
-        <img src="uploads/downloaded-image.png" 
+        <img id="main-hero-img" src="uploads/downloaded-image.png" 
              class="hero-video-bg w-full h-full object-cover" 
              alt="Luxury Archive">
         <div class="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-white"></div>
@@ -135,16 +135,16 @@
     </main>
 
     <section class="brand-story-section">
-    <div class="footer-text-content">
-    <h4 id="display-footer-title" class="text-[9px] font-bold uppercase tracking-widest mb-4">01. HERITAGE & CRAFT</h4>
-    <p id="display-footer-desc" class="text-[11px] text-zinc-500 leading-relaxed max-w-xs">
-        MR WANG SILK 汲取高级定制精髓，将真丝纤维与现代廓形结合。
-    </p>
-    </div>
-<div class="footer-image-container">
-    <img id="display-footer-img" src="默认图片地址.jpg" class="w-full h-auto shadow-2xl">
-</div>
-            <img src="uploads/downloaded-image.png" class="story-image shadow-2xl">
+        <div class="story-content-wrapper">
+            <div class="story-text">
+                <h4 id="display-footer-title" class="text-[9px] font-bold uppercase tracking-widest mb-4">01. HERITAGE & CRAFT</h4>
+                <p id="display-footer-desc" class="text-[11px] text-zinc-500 leading-relaxed max-w-xs">
+                    MR WANG SILK 汲取高级定制精髓，将真丝纤维与现代廓形结合。
+                </p>
+            </div>
+            <div class="footer-image-container">
+                <img id="display-footer-img" src="uploads/downloaded-image.png" class="story-image shadow-2xl" alt="Brand Story Image">
+            </div>
         </div>
     </section>
 
@@ -205,11 +205,9 @@
             renderGrid(filtered);
         }
 
-        // --- 修复功能函数 ---
         function openAuth() { document.getElementById('auth-modal').style.display = 'flex'; }
         function closeAuth() { document.getElementById('auth-modal').style.display = 'none'; }
 
-        // 切换注册与登录视图
         function toggleAuth(mode) {
             const loginForm = document.getElementById('login-form');
             const regForm = document.getElementById('reg-form');
@@ -222,13 +220,11 @@
             }
         }
 
-        // 注册处理
         async function handleRegister() {
             const nick = document.getElementById('r-nick').value;
             const email = document.getElementById('r-email').value;
             const pass = document.getElementById('r-pass').value;
             if(!email || !pass) return alert("Please fill in fields.");
-
             try {
                 const res = await fetch('/api/register', {
                     method: 'POST',
@@ -245,12 +241,10 @@
             } catch (e) { alert("Server Error"); }
         }
 
-        // 登录处理
         async function handleLogin() {
             const email = document.getElementById('l-email').value;
             const pass = document.getElementById('l-pass').value;
             if(!email || !pass) return alert("Please enter credentials.");
-
             try {
                 const res = await fetch('/api/login', {
                     method: 'POST',
@@ -267,38 +261,44 @@
             } catch (e) { alert("Server Error"); }
         }
 
-        window.onload = () => { loadProducts(); checkAuth(); };
+        // ✨ 视觉引擎同步功能
+        async function applyLiveSettings() {
+            try {
+                const res = await fetch('/api/settings');
+                const config = await res.json();
 
-        // 在页面加载时自动获取后台配置的大图
-        
-    async function applyLiveSettings() {
-        try {
-        const res = await fetch('/api/settings');
-        const config = await res.json();
-        
-        console.log("收到后台配置:", config); // 在 F12 控制台能看到这个
+                // 1. 同步顶部 Banner
+                if (config && config.hero_banner) {
+                    const heroImg = document.getElementById('main-hero-img');
+                    if (heroImg) {
+                        heroImg.src = config.hero_banner;
+                        heroImg.style.opacity = "1";
+                    }
+                }
 
-        if (config && config.hero_banner) {
-            const heroImg = document.querySelector('.hero-video-bg');
-            if (heroImg) {
-                heroImg.src = config.hero_banner;
-                heroImg.style.opacity = "1"; // 确保它是显示的
+                // 2. 同步底部图文
+                if (config.footer_title) {
+                    const fTitle = document.getElementById('display-footer-title');
+                    if (fTitle) fTitle.innerText = config.footer_title;
+                }
+                if (config.footer_desc) {
+                    const fDesc = document.getElementById('display-footer-desc');
+                    if (fDesc) fDesc.innerText = config.footer_desc;
+                }
+                if (config.footer_img) {
+                    const fImg = document.getElementById('display-footer-img');
+                    if (fImg) fImg.src = config.footer_img;
+                }
+            } catch (err) {
+                console.error("视觉配置同步失败:", err);
             }
         }
-    } catch (err) {
-        console.error("首页视觉加载失败:", err);
-    }
-}
 
-// 确保在产品加载的同时也加载配置
-window.addEventListener('DOMContentLoaded', () => {
-    applyLiveSettings();
-    loadProducts(); // 你原有的加载产品函数
-});
-        
+        window.onload = () => { 
+            applyLiveSettings(); 
+            loadProducts(); 
+            checkAuth(); 
+        };
     </script>
 </body>
 </html>
-
-
-
