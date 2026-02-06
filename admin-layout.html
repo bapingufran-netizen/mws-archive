@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>M.W.S | 视觉引擎配置</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
         body { font-family: 'Inter', "Microsoft YaHei", sans-serif; background: #fff; color: #000; }
@@ -60,7 +61,11 @@
                     </div>
                     <div>
                         <p class="text-[10px] font-bold mb-3 text-zinc-400 uppercase">当前首选大图 URL</p>
-                        <input type="text" value="https://cloudinary.com/mws/hero-v2.jpg" class="w-full border-b border-zinc-200 py-2 text-sm outline-none focus:border-black transition">
+                        <input type="text" id="hero-url-input" value="https://cloudinary.com/mws/hero-v2.jpg" class="w-full border-b border-zinc-200 py-2 text-sm outline-none focus:border-black transition mb-4">
+                        
+                        <button onclick="openUploadWidget()" class="w-full py-3 bg-zinc-50 border border-zinc-200 text-[9px] font-bold tracking-[0.2em] uppercase hover:bg-black hover:text-white transition duration-500">
+                            Cloudinary 智能上传
+                        </button>
                     </div>
                 </div>
             </section>
@@ -113,8 +118,43 @@
     </main>
 
     <script>
+        // --- Cloudinary 配置 (请在此处填入你的信息) ---
+        const cloudName = "你的_Cloud_Name"; 
+        const uploadPreset = "你的_Unsigned_Preset"; 
+
+        function openUploadWidget() {
+            cloudinary.openUploadWidget({
+                cloudName: cloudName,
+                uploadPreset: uploadPreset,
+                sources: ['local', 'url'],
+                showAdvancedOptions: false,
+                cropping: true,
+                multiple: false,
+                theme: "minimal",
+                palette: {
+                    window: "#FFFFFF",
+                    sourceBg: "#FFFFFF",
+                    windowBorder: "#000000",
+                    tabIcon: "#000000",
+                    inactiveTabIcon: "#8E8E8E",
+                    menuIcons: "#000000",
+                    link: "#000000",
+                    action: "#000000",
+                    inProgress: "#000000",
+                    complete: "#000000",
+                    error: "#E41E1E",
+                    textDark: "#000000",
+                    textLight: "#FFFFFF"
+                }
+            }, (error, result) => {
+                if (!error && result && result.event === "success") {
+                    // 自动将 URL 写入输入框
+                    document.getElementById('hero-url-input').value = result.info.secure_url;
+                }
+            });
+        }
+
         function saveAllConfigs() {
-            // 模拟保存交互反馈
             const btn = event.target;
             const originalText = btn.innerText;
             btn.innerText = "正在部署变更...";
