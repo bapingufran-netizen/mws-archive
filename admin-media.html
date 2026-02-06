@@ -6,120 +6,217 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-        body { font-family: 'Inter', "Microsoft YaHei", sans-serif; background: #ffffff; color: #000000; }
-        .modern-nav { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); border-bottom: 2px solid #000; }
-        .media-card { border: 1px solid #f0f0f0; position: relative; transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); }
-        .media-card:hover { border-color: #000; transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.08); }
-        .action-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.85); opacity: 0; transition: opacity 0.3s ease; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; z-index: 20; }
-        .media-card:hover .action-overlay { opacity: 1; }
-        .action-btn { width: 80%; padding: 10px 0; border: 1px solid rgba(255,255,255,0.3); color: white; font-size: 10px; font-weight: 700; letter-spacing: 0.2em; transition: 0.3s; text-transform: uppercase; }
-        .action-btn:hover { background: white; color: black; border-color: white; }
-        .btn-delete { color: #ff4d4f; border-color: rgba(255,77,79,0.3); }
-        .btn-delete:hover { background: #ff4d4f; color: white; }
-        .type-tag { position: absolute; top: 15px; left: 15px; background: black; color: white; padding: 4px 10px; font-size: 8px; font-weight: 800; z-index: 10; }
+        
+        body { 
+            font-family: 'Inter', "Microsoft YaHei", sans-serif; 
+            background: #ffffff; 
+            color: #000000;
+        }
+
+        .modern-nav {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 2px solid #000;
+        }
+
+        /* 媒体卡片悬停效果 */
+        .media-card {
+            border: 1px solid #f0f0f0;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        .media-card:hover {
+            border-color: #000;
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+        }
+
+        .action-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            z-index: 20;
+        }
+
+        .media-card:hover .action-overlay {
+            opacity: 1;
+        }
+
+        .action-btn {
+            width: 80%;
+            padding: 10px 0;
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            transition: 0.3s;
+            text-transform: uppercase;
+        }
+
+        .action-btn:hover {
+            background: white;
+            color: black;
+            border-color: white;
+        }
+
+        .btn-delete {
+            color: #ff4d4f;
+            border-color: rgba(255,77,79,0.3);
+        }
+
+        .btn-delete:hover {
+            background: #ff4d4f;
+            color: white;
+            border-color: #ff4d4f;
+        }
+
+        .type-tag {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: black;
+            color: white;
+            padding: 4px 10px;
+            font-size: 8px;
+            font-weight: 800;
+            z-index: 10;
+        }
+
+        .loader {
+            border-top-color: #000;
+            animation: spinner 0.6s linear infinite;
+        }
+
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="min-h-screen">
 
     <nav class="modern-nav fixed top-0 w-full z-50 px-8 lg:px-12 py-6 flex justify-between items-center">
         <div class="flex items-center gap-12">
-            <h1 class="text-2xl font-extrabold tracking-tighter">M.W.S / 媒体档案</h1>
-            <button onclick="location.href='admin-console.html'" class="text-[10px] font-bold tracking-widest hover:opacity-50 transition uppercase">返回控制台</button>
+            <h1 class="text-2xl font-extrabold tracking-tighter uppercase">M.W.S / MEDIA</h1>
+            <button onclick="location.href='admin-console.html'" class="text-[10px] font-bold tracking-widest hover:opacity-50 transition">返回控制台</button>
         </div>
         <div class="flex gap-4">
             <input type="file" id="fileUpload" class="hidden" onchange="handleFileSelect(this)" accept="image/*,video/*,audio/*">
-            <button onclick="document.getElementById('fileUpload').click()" class="px-6 py-2 bg-black text-white text-[10px] font-black uppercase shadow-lg active:scale-95 transition">上传新素材</button>
+            <button id="uploadBtn" onclick="document.getElementById('fileUpload').click()" class="px-8 py-3 bg-black text-white text-[11px] font-black uppercase shadow-lg hover:bg-zinc-800 transition active:scale-95">上传新素材</button>
         </div>
     </nav>
 
     <main class="pt-40 px-8 lg:px-12 pb-24">
+        
         <div class="mb-20 flex flex-col md:flex-row justify-between items-end gap-12">
             <div class="w-full md:w-2/5">
-                <p class="text-[9px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-3">INTERNAL SEARCH</p>
-                <input type="text" id="searchInput" placeholder="搜索资产名称..." class="w-full border-b-2 border-zinc-100 py-3 text-lg outline-none focus:border-black transition" oninput="handleSearch()">
+                <p class="text-[9px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-3">Asset Library Search</p>
+                <input type="text" id="searchInput" placeholder="搜索资产名称或编号..." class="w-full border-b-2 border-zinc-100 py-3 text-lg outline-none focus:border-black transition" oninput="handleSearch()">
             </div>
-            <div id="filterContainer" class="flex gap-10">
-                <button onclick="filter('ALL')" class="filter-btn text-[11px] font-black border-b-2 border-black pb-2">全部</button>
-                <button onclick="filter('IMAGE')" class="filter-btn text-[11px] font-bold text-zinc-400 hover:text-black transition pb-2">图片</button>
-                <button onclick="filter('VIDEO')" class="filter-btn text-[11px] font-bold text-zinc-400 hover:text-black transition pb-2">视频</button>
-                <button onclick="filter('AUDIO')" class="filter-btn text-[11px] font-bold text-zinc-400 hover:text-black transition pb-2">音频</button>
+            
+            <div class="flex gap-10">
+                <button onclick="filterType('ALL')" class="filter-btn text-[11px] font-black border-b-2 border-black pb-2">全部</button>
+                <button onclick="filterType('IMAGE')" class="filter-btn text-[11px] font-bold text-zinc-400 hover:text-black transition pb-2">图片</button>
+                <button onclick="filterType('VIDEO')" class="filter-btn text-[11px] font-bold text-zinc-400 hover:text-black transition pb-2">视频</button>
+                <button onclick="filterType('AUDIO')" class="filter-btn text-[11px] font-bold text-zinc-400 hover:text-black transition pb-2">音频</button>
             </div>
         </div>
 
         <div id="mediaGrid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
-            <p class="text-zinc-300 animate-pulse">正在连接档案库...</p>
-        </div>
+            </div>
+
     </main>
 
     <script>
+        // --- 配置信息 ---
+        const CLOUD_NAME = "dbyud7vlz"; 
+        const UPLOAD_PRESET = "mws_assets"; 
+
         let allAssets = [];
 
-        // 1. 页面加载即拉取数据
+        // 初始化加载
         window.onload = loadAssets;
 
         async function loadAssets() {
+            const grid = document.getElementById('mediaGrid');
             try {
                 const res = await fetch('/api/media');
                 allAssets = await res.json();
                 renderGrid(allAssets);
             } catch (err) {
-                console.error("加载失败:", err);
+                grid.innerHTML = `<p class="text-red-500 text-xs uppercase">无法连接到数据库</p>`;
             }
         }
 
-        // 2. 核心渲染逻辑
         function renderGrid(data) {
             const grid = document.getElementById('mediaGrid');
             if (data.length === 0) {
-                grid.innerHTML = '<p class="text-zinc-400 text-xs tracking-widest col-span-full py-20 text-center uppercase">Archive is empty / 档案库为空</p>';
+                grid.innerHTML = `<div class="col-span-full py-20 text-center text-zinc-300 text-xs tracking-widest uppercase">存档库为空 / Archive Empty</div>`;
                 return;
             }
             grid.innerHTML = data.map(item => `
                 <div class="media-card group">
                     <span class="type-tag">${item.type}</span>
                     <div class="aspect-square bg-zinc-50 overflow-hidden relative">
-                        <img src="${item.url}" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700">
+                        <img src="${item.url}" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000">
                         <div class="action-overlay">
                             <button class="action-btn" onclick="copyLink('${item.url}')">复制链接</button>
+                            <button class="action-btn" onclick="window.open('${item.url}')">全屏预览</button>
                             <button class="action-btn btn-delete" onclick="deleteAsset(${item.id})">删除资产</button>
                         </div>
                     </div>
                     <div class="p-5 bg-white">
-                        <p class="text-[8px] font-bold text-zinc-300 mb-2 tracking-widest">ID: #0${item.id}</p>
-                        <h3 class="text-[12px] font-black tracking-widest uppercase truncate">${item.tag || '未命名资产'}</h3>
+                        <p class="text-[8px] font-bold text-zinc-300 mb-2 tracking-widest uppercase">Asset ID: #0${item.id}</p>
+                        <h3 class="text-[12px] font-black tracking-widest uppercase truncate">${item.tag || '未命名素材'}</h3>
                     </div>
                 </div>
             `).join('');
         }
 
-        // 3. 核心修复：处理文件上传动作
+        // --- 核心：Cloudinary 上传逻辑 ---
         async function handleFileSelect(input) {
             const file = input.files[0];
             if (!file) return;
 
-            // 按钮状态反馈
-            const btn = input.nextElementSibling;
-            const originalText = "上传新素材";
-            btn.innerText = "正在同步...";
+            const btn = document.getElementById('uploadBtn');
+            const originalText = btn.innerText;
+            btn.innerText = "正在同步云端...";
             btn.disabled = true;
 
             try {
-                // 自动识别资产类型
+                // 1. 上传至 Cloudinary
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('upload_preset', UPLOAD_PRESET);
+
+                const cloudRes = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const cloudData = await cloudRes.json();
+
+                if (!cloudData.secure_url) throw new Error("云端回传失败");
+
+                // 2. 将 URL 存入本地数据库
                 let assetType = 'IMAGE';
                 if (file.type.includes('video')) assetType = 'VIDEO';
                 if (file.type.includes('audio')) assetType = 'AUDIO';
 
-                // 这里假设您在本地预览，如果是线上，您之前配置了自动转存逻辑到 Cloudinary
-                // 为了保证立马可用，我们将文件信息 POST 给后端 API
-                // 注意：这里需要配合您的 Cloudinary 逻辑，如果没有配置自动上传，这里传的是本地预览地址
-                
                 const assetData = {
                     type: assetType,
                     tag: file.name.split('.')[0].toUpperCase(),
-                    url: "https://via.placeholder.com/600x800?text=Asset+Syncing" // 临时占位，待 Cloudinary 返回链接
+                    url: cloudData.secure_url
                 };
 
-                // 发送给 server.js
                 const res = await fetch('/api/media', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -127,43 +224,44 @@
                 });
 
                 if (res.ok) {
-                    alert("同步成功：资产已归档至数据库");
-                    loadAssets(); // 重新加载列表
+                    alert("同步完成：资产已永久归档");
+                    loadAssets();
                 }
             } catch (err) {
-                alert("上传失败，请检查网络或后端接口");
+                alert("上传失败，请检查 Cloudinary 配置");
+                console.error(err);
             } finally {
                 btn.innerText = originalText;
                 btn.disabled = false;
-                input.value = ""; // 清空选择
+                input.value = "";
             }
         }
 
-        // 4. 删除逻辑
         async function deleteAsset(id) {
-            if (!confirm("确认永久销毁该数字资产？")) return;
+            if(!confirm('确定要从数据库中永久销毁此资产吗？')) return;
             const res = await fetch(`/api/media/${id}`, { method: 'DELETE' });
-            if (res.ok) {
-                loadAssets();
-            }
+            if (res.ok) loadAssets();
         }
 
-        // 5. 复制链接
         function copyLink(url) {
             navigator.clipboard.writeText(url);
-            alert("链接已复制至剪贴板");
+            alert("链接已复制");
         }
 
-        // 6. 搜索与筛选
         function handleSearch() {
-            const term = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = allAssets.filter(a => a.tag.toLowerCase().includes(term));
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allAssets.filter(a => a.tag.toLowerCase().includes(query));
             renderGrid(filtered);
         }
 
-        function filter(type) {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.replace('text-black', 'text-zinc-400'));
-            // 筛选逻辑...
+        function filterType(type) {
+            // 更新 UI 样式
+            document.querySelectorAll('.filter-btn').forEach(b => {
+                b.classList.remove('border-black', 'text-black');
+                b.classList.add('text-zinc-400');
+            });
+            event.target.classList.add('border-black', 'text-black');
+
             if (type === 'ALL') renderGrid(allAssets);
             else renderGrid(allAssets.filter(a => a.type === type));
         }
