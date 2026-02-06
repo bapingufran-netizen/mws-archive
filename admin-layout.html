@@ -121,52 +121,39 @@
         }
 
         async function saveAllConfigs() {
-            const btn = document.getElementById('save-btn');
-            const originalText = btn.innerText;
+        const btn = document.getElementById('save-btn'); // 确保你的按钮有这个 id
+        const heroUrl = document.getElementById('hero-url-input').value;
 
-            const payload = {
-                "hero_banner": document.getElementById('hero-url-input').value,
-                "hero_autoplay": document.getElementById('autoPlay').checked ? "on" : "off",
-                "show_notice": document.getElementById('showNotice').checked ? "true" : "false",
-                "notice_content": document.getElementById('noticeContent').value
-            };
+        btn.innerText = "正在同步云端...";
+        btn.disabled = true;
 
-            btn.innerText = "正在部署变更...";
-            btn.style.opacity = "0.5";
-            btn.disabled = true;
+        try {
+        const response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'x-mws-auth': 'MWS2026' // 🔒 关键：这是你后端的通关口令
+            },
+            body: JSON.stringify({ "hero_banner": heroUrl })
+        });
 
-            try {
-                const response = await fetch('/api/settings', {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'x-mws-auth': ADMIN_AUTH_KEY 
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    btn.innerText = "变更已全站生效";
-                    btn.classList.replace('bg-black', 'bg-green-600');
-                } else {
-                    throw new Error("服务器拒绝保存");
-                }
-            } catch (err) {
-                console.error("保存失败:", err);
-                btn.innerText = "部署失败：认证无效";
-                btn.classList.replace('bg-black', 'bg-red-600');
-            }
-
-            setTimeout(() => {
-                btn.innerText = originalText;
-                btn.classList.remove('bg-green-600', 'bg-red-600');
-                btn.classList.add('bg-black');
-                btn.style.opacity = "1";
-                btn.disabled = false;
-            }, 2000);
+        const result = await response.json();
+        if (result.success) {
+            btn.innerText = "变更已全站生效";
+            btn.style.backgroundColor = "#16a34a"; // 变绿代表数据库存好了
         }
+    } catch (err) {
+        btn.innerText = "认证失败";
+        btn.style.backgroundColor = "#dc2626";
+    }
+
+    setTimeout(() => {
+        btn.innerText = "应用全局变更";
+        btn.style.backgroundColor = "#000";
+        btn.disabled = false;
+    }, 2000);
+}
     </script>
 </body>
 </html>
+
