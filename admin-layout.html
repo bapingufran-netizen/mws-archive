@@ -57,4 +57,116 @@
                         <label for="autoPlay" class="switch-label"></label>
                     </div>
                     <div>
-                        <p class="text-[10px
+                        <p class="text-[10px] font-bold mb-3 text-zinc-400 uppercase">当前首选大图 URL</p>
+                        <input type="text" id="hero-url-input" value="https://res.cloudinary.com/dbyud7vlz/image/upload/v1770366376/nsm7l5gghk5ve1yvvffb.png" class="w-full border-b border-zinc-200 py-2 text-sm outline-none focus:border-black transition mb-4">
+                        <button onclick="openUploadWidget()" class="w-full py-3 bg-zinc-50 border border-zinc-200 text-[9px] font-bold tracking-[0.2em] uppercase hover:bg-black hover:text-white transition duration-500">
+                            Cloudinary 智能上传
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="config-card p-10">
+                <p class="text-[9px] font-black text-zinc-300 uppercase tracking-widest mb-6">#02 / Announcements</p>
+                <h3 class="text-xl font-black mb-8">全站置顶公告栏</h3>
+                <div class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-bold">启用顶部通知</span>
+                        <input type="checkbox" id="showNotice" class="switch-input">
+                        <label for="showNotice" class="switch-label"></label>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold mb-3 text-zinc-400 uppercase">公告内容 (支持中文)</p>
+                        <textarea id="noticeContent" class="w-full border border-zinc-100 p-4 text-sm outline-none focus:border-black transition h-24" placeholder="例如：2026 春夏系列“幻影”现已开放预订"></textarea>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script>
+        const cloudName = "dbyud7vlz"; 
+        const uploadPreset = "aliang"; 
+        const ADMIN_AUTH_KEY = "MWS2026"; 
+
+        function openUploadWidget() {
+            cloudinary.openUploadWidget({
+                cloudName: cloudName,
+                uploadPreset: uploadPreset,
+                sources: ['local', 'url'],
+                showAdvancedOptions: false,
+                cropping: true,
+                multiple: false,
+                theme: "minimal",
+                palette: {
+                    window: "#FFFFFF",
+                    sourceBg: "#FFFFFF",
+                    windowBorder: "#000000",
+                    tabIcon: "#000000",
+                    inactiveTabIcon: "#8E8E8E",
+                    menuIcons: "#000000",
+                    link: "#000000",
+                    action: "#000000",
+                    inProgress: "#000000",
+                    complete: "#000000",
+                    error: "#E41E1E",
+                    textDark: "#000000",
+                    textLight: "#FFFFFF"
+                }
+            }, (error, result) => {
+                if (!error && result && result.event === "success") {
+                    document.getElementById('hero-url-input').value = result.info.secure_url;
+                }
+            });
+        }
+
+        async function saveAllConfigs() {
+            const btn = document.getElementById('save-btn');
+            const originalText = btn.innerText;
+
+            const payload = {
+                "hero_banner": document.getElementById('hero-url-input').value,
+                "hero_autoplay": document.getElementById('autoPlay').checked ? "on" : "off",
+                "show_notice": document.getElementById('showNotice').checked ? "true" : "false",
+                "notice_content": document.getElementById('noticeContent').value
+            };
+
+            btn.innerText = "正在部署变更...";
+            btn.style.opacity = "0.5";
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-mws-auth': ADMIN_AUTH_KEY 
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    btn.innerText = "变更已全站生效";
+                    btn.classList.replace('bg-black', 'bg-green-600');
+                } else {
+                    throw new Error("服务器拒绝保存");
+                }
+            } catch (err) {
+                console.error("保存失败:", err);
+                btn.innerText = "部署失败：认证无效";
+                btn.classList.replace('bg-black', 'bg-red-600');
+            }
+
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.classList.remove('bg-green-600', 'bg-red-600');
+                btn.classList.add('bg-black');
+                btn.style.opacity = "1";
+                btn.disabled = false;
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
