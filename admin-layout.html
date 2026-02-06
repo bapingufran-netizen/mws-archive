@@ -82,6 +82,27 @@
                 </div>
             </section>
         </div>
+<section class="config-card p-10 mt-12">
+    <p class="text-[9px] font-black text-zinc-300 uppercase tracking-widest mb-6">#05 / Footer Aesthetics</p>
+    <h3 class="text-xl font-black mb-8">底部展示区域自定义</h3>
+    <div class="space-y-6">
+        <div>
+            <p class="text-[10px] font-bold mb-3 text-zinc-400 uppercase">底部小标题 (e.g. 01. HERITAGE & CRAFT)</p>
+            <input type="text" id="footer-title-input" placeholder="输入标题..." class="w-full border-b border-zinc-200 py-2 text-sm outline-none focus:border-black transition mb-4">
+        </div>
+        <div>
+            <p class="text-[10px] font-bold mb-3 text-zinc-400 uppercase">底部描述文字</p>
+            <textarea id="footer-desc-input" class="w-full border border-zinc-100 p-4 text-sm outline-none focus:border-black transition h-20" placeholder="描述品牌理念..."></textarea>
+        </div>
+        <div>
+            <p class="text-[10px] font-bold mb-3 text-zinc-400 uppercase">底部展示图 URL</p>
+            <input type="text" id="footer-img-input" class="w-full border-b border-zinc-200 py-2 text-sm outline-none focus:border-black transition mb-4">
+            <button onclick="openFooterUpload()" class="w-full py-3 bg-zinc-50 border border-zinc-200 text-[9px] font-bold tracking-[0.2em] uppercase hover:bg-black hover:text-white transition duration-500">
+                上传底部展示图
+            </button>
+        </div>
+    </div>
+</section>
     </main>
 
     <script>
@@ -156,4 +177,5 @@
     </script>
 </body>
 </html>
+
 
