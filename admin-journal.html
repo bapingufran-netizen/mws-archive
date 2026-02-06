@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>M.W.S | 叙事志档案</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+        body { font-family: 'Inter', "Microsoft YaHei", sans-serif; background: #fff; color: #000; overflow-x: hidden; }
+        
+        .modern-nav { background: rgba(255, 255, 255, 0.98); border-bottom: 2px solid #000; }
+
+        /* 搜索引擎交互 */
+        .search-wrapper { position: relative; }
+        .journal-search {
+            width: 100%; border: none; border-bottom: 2px solid #eee;
+            padding: 15px 0; font-size: 20px; outline: none; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .journal-search:focus { border-bottom-color: #000; transform: translateY(-2px); }
+
+        /* 分类按钮交互 */
+        .cat-btn {
+            font-size: 11px; font-weight: 800; color: #ccc; letter-spacing: 0.2em;
+            transition: 0.3s; padding-bottom: 8px; border-bottom: 2px solid transparent;
+        }
+        .cat-btn.active { color: #000; border-bottom-color: #000; }
+        .cat-btn:hover:not(.active) { color: #666; }
+
+        /* 列表行交互 */
+        .journal-row {
+            border-bottom: 1px solid #f2f2f2;
+            transition: all 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+            cursor: pointer;
+        }
+        .journal-row:hover { background: #fafafa; padding-left: 20px; }
+
+        /* 编辑器全屏弹出动画 */
+        #editorOverlay {
+            transform: translateY(100%);
+            transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        #editorOverlay.active { transform: translateY(0); }
+
+        /* 按钮点击波纹反馈 */
+        .btn-press { transition: transform 0.1s; }
+        .btn-press:active { transform: scale(0.95); }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <nav class="modern-nav fixed top-0 w-full z-50 px-8 lg:px-12 py-6 flex justify-between items-center">
+        <div class="flex items-center gap-12">
+            <h1 class="text-2xl font-extrabold tracking-tighter uppercase">M.W.S / JOURNAL</h1>
+            <button onclick="location.href='admin-console.html'" class="text-[10px] font-bold tracking-widest btn-press">返回中枢</button>
+        </div>
+        <button onclick="openEditor()" class="bg-black text-white px-8 py-3 text-[11px] font-black uppercase btn-press">撰写新章节</button>
+    </nav>
+
+    <main class="pt-44 px-8 lg:px-24 pb-24">
+        
+        <div class="mb-24 space-y-14">
+            <div class="search-wrapper">
+                <p class="text-[9px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-3">INTERNAL SEARCH / 搜索</p>
+                <input type="text" id="journalSearch" placeholder="输入标题、日期或核心关键词..." class="journal-search font-light" oninput="handleLiveSearch()">
+            </div>
+
+            <div class="flex gap-12">
+                <button onclick="switchCategory('ALL')" class="cat-btn active" id="cat-ALL">全部内容</button>
+                <button onclick="switchCategory('匠心工艺')" class="cat-btn" id="cat-匠心工艺">匠心工艺</button>
+                <button onclick="switchCategory('品牌动态')" class="cat-btn" id="cat-品牌动态">品牌动态</button>
+                <button onclick="switchCategory('穿搭志')" class="cat-btn" id="cat-穿搭志">穿搭志</button>
+            </div>
+        </div>
+
+        <div id="journalContainer" class="space-y-0">
+            <p class="text-zinc-300 text-xs italic tracking-widest">正在检索档案库...</p>
+        </div>
+
+    </main>
+
+    <div id="editorOverlay" class="fixed inset-0 bg-white z-[100] flex flex-col p-12 lg:p-24 overflow-y-auto">
+        <div class="flex justify-between items-center mb-20">
+            <button onclick="closeEditor()" class="text-[11px] font-black tracking-widest btn-press">← 取消编辑 / EXIT</button>
+            <div class="flex gap-6">
+                <button onclick="saveDraft()" class="text-[11px] font-bold border border-zinc-200 px-8 py-3 btn-press">暂存草稿</button>
+                <button onclick="publishPost()" class="bg-black text-white px-10 py-3 text-[11px] font-black btn-press uppercase">发布至官网</button>
+            </div>
+        </div>
+        
+        <div class="max-w-4xl mx-auto w-full space-y-12">
+            <div class="border-b border-black pb-4">
+                <p class="text-[10px] font-black text-zinc-400 mb-2">文章分类</p>
+                <select id="postCategory" class="w-full text-sm font-bold bg-transparent outline-none cursor-pointer">
+                    <option>匠心工艺</option><option>品牌动态</option><option>穿搭志</option>
+                </select>
+            </div>
+            <input type="text" id="postTitle" placeholder="在此处输入章节标题..." class="w-full text-5xl font-black border-none outline-none placeholder:text-zinc-100">
+            <textarea id="postContent" class="w-full min-h-[500px] text-xl leading-relaxed outline-none placeholder:text-zinc-100" placeholder="开始您的品牌叙事..."></textarea>
+        </div>
+    </div>
+
+    <script>
+        // 模拟已有的日志数据
+        let journals = [
+            { id: 1, title: '桑蚕丝的千年呼吸：工艺背后的哲学', date: '2026.02.05', cat: '匠心工艺', status: '已发布' },
+            { id: 2, title: '2026 春夏“幻影”系列秀场直击', date: '2026.01.20', cat: '品牌动态', status: '已发布' },
+            { id: 3, title: '真丝叠穿术：冬季优雅的保密协议', date: '2026.01.12', cat: '穿搭志', status: '草稿' }
+        ];
+
+        let activeFilter = 'ALL';
+
+        // 渲染列表函数：增加交互动画反馈
+        function renderList(data) {
+            const container = document.getElementById('journalContainer');
+            if (data.length === 0) {
+                container.innerHTML = `<p class="py-20 text-zinc-300 text-sm tracking-widest text-center border-t border-zinc-100">未找到相关档案记录</p>`;
+                return;
+            }
+            container.innerHTML = data.map((item, idx) => `
+                <div class="journal-row flex items-center py-10" onclick="editPost(${item.id})">
+                    <div class="w-20 text-[10px] font-black text-zinc-200">#0${item.id}</div>
+                    <div class="flex-1 px-6">
+                        <h3 class="text-xl font-black tracking-widest">${item.title}</h3>
+                        <p class="text-[9px] text-zinc-400 mt-2 font-bold uppercase tracking-[0.2em]">FILE DATE: ${item.date}</p>
+                    </div>
+                    <div class="w-32 text-[10px] font-black uppercase tracking-widest">${item.cat}</div>
+                    <div class="w-32">
+                        <span class="text-[9px] font-black ${item.status === '已发布' ? 'bg-black text-white' : 'border border-zinc-200 text-zinc-400'} px-3 py-1 uppercase">
+                            ${item.status}
+                        </span>
+                    </div>
+                    <div class="w-40 text-right">
+                        <button class="text-[10px] font-black text-red-600 opacity-0 group-hover:opacity-100 transition-opacity" onclick="deleteItem(${item.id}, event)">删除</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 分类切换逻辑
+        function switchCategory(cat) {
+            activeFilter = cat;
+            document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`cat-${cat}`).classList.add('active');
+            handleLiveSearch();
+        }
+
+        // 搜索引擎实时逻辑
+        function handleLiveSearch() {
+            const query = document.getElementById('journalSearch').value.toLowerCase();
+            const filtered = journals.filter(j => {
+                const matchQuery = j.title.toLowerCase().includes(query) || j.date.includes(query);
+                const matchCat = activeFilter === 'ALL' || j.cat === activeFilter;
+                return matchQuery && matchCat;
+            });
+            renderList(filtered);
+        }
+
+        // 编辑器交互逻辑
+        function openEditor() {
+            document.getElementById('postTitle').value = "";
+            document.getElementById('postContent').value = "";
+            document.getElementById('editorOverlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeEditor() {
+            document.getElementById('editorOverlay').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function publishPost() {
+            const title = document.getElementById('postTitle').value;
+            if(!title) return alert("请输入标题");
+            
+            // 模拟添加到列表
+            const newPost = {
+                id: journals.length + 1,
+                title: title,
+                date: new Date().toLocaleDateString(),
+                cat: document.getElementById('postCategory').value,
+                status: '已发布'
+            };
+            journals.unshift(newPost);
+            renderList(journals);
+            closeEditor();
+            alert("文章已成功推送至官网。");
+        }
+
+        function deleteItem(id, e) {
+            e.stopPropagation();
+            if(confirm("确认永久销毁该叙事档案吗？")) {
+                journals = journals.filter(j => j.id !== id);
+                renderList(journals);
+            }
+        }
+
+        // 初始化加载
+        window.onload = () => renderList(journals);
+    </script>
+</body>
+</html>

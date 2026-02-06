@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>M.W.S | 品牌艺术中枢</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400&family=Noto+Sans+SC:wght@100;300;500&display=swap');
+        
+        :root {
+            --mws-accent: #000000;
+            --mws-soft-gray: #f9f9f9;
+        }
+
+        body { 
+            font-family: 'Noto Sans SC', 'Inter', sans-serif; 
+            background: #ffffff; 
+            color: #1a1a1a;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* 艺术边框装饰 */
+        .frame-line {
+            position: fixed;
+            background: #f0f0f0;
+            z-index: 100;
+        }
+
+        /* 核心卡片设计 */
+        .console-card {
+            background: #ffffff;
+            border: 1px solid #eeeeee;
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .console-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0,0,0,0.02), transparent);
+            transition: 0.5s;
+        }
+
+        .console-card:hover {
+            border-color: var(--mws-accent);
+            transform: translateY(-12px) scale(1.02);
+            box-shadow: 0 40px 80px rgba(0,0,0,0.04);
+        }
+
+        .console-card:hover::before {
+            left: 100%;
+        }
+
+        /* 英文修饰语 */
+        .en-decoration {
+            font-size: 8px;
+            letter-spacing: 0.4em;
+            text-transform: uppercase;
+            color: #d1d1d1;
+            font-weight: 300;
+        }
+
+        /* 悬停时的数字特效 */
+        .card-num-art {
+            font-family: 'Inter';
+            font-weight: 100;
+            font-size: 6rem;
+            line-height: 1;
+            color: #f5f5f5;
+            transition: 0.8s;
+        }
+        .console-card:hover .card-num-art {
+            color: #000;
+            opacity: 0.05;
+            transform: translateX(-20px);
+        }
+
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #fff; }
+        ::-webkit-scrollbar-thumb { background: #000; }
+    </style>
+</head>
+<body class="p-10 lg:p-24 min-h-screen flex flex-col justify-between">
+
+    <div class="frame-line top-0 left-0 w-full h-[1px]"></div>
+    <div class="frame-line top-0 left-0 w-[1px] h-full"></div>
+
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-24 relative z-10">
+        <div class="space-y-2">
+            <h1 class="text-4xl font-extralight tracking-[0.2em] italic">M.W.S</h1>
+            <div class="flex items-center gap-4">
+                <span class="h-[1px] w-8 bg-black"></span>
+                <span class="text-xs font-medium tracking-widest uppercase">控制中心 / Dashboard</span>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-12">
+            <div class="text-right">
+                <p class="text-[10px] en-decoration mb-1">Status: Authenticated</p>
+                <p class="text-sm font-light">管理员：Admin_MWS</p>
+            </div>
+            <button onclick="logout()" class="group relative px-8 py-3 overflow-hidden">
+                <span class="relative z-10 text-[11px] font-bold tracking-widest group-hover:text-white transition-colors duration-500">退出系统</span>
+                <div class="absolute inset-0 bg-black translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
+                <div class="absolute inset-0 border border-black"></div>
+            </button>
+        </div>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+        
+        <div onclick="location.href='studio.html'" class="console-card p-12 rounded-sm aspect-[4/5] flex flex-col justify-between group">
+            <div class="card-num-art">01</div>
+            <div>
+                <p class="en-decoration mb-4">Operations / 01</p>
+                <h2 class="text-2xl font-light mb-4">工作室管理</h2>
+                <p class="text-[11px] text-zinc-400 leading-relaxed font-light">处理产品生命周期、实时订单追踪与物流档案。这是您的业务核心枢纽。</p>
+            </div>
+        </div>
+
+        <div onclick="location.href='admin-media.html'" class="console-card p-12 rounded-sm aspect-[4/5] flex flex-col justify-between group mt-0 lg:mt-12">
+            <div class="card-num-art">02</div>
+            <div>
+                <p class="en-decoration mb-4">Visual Assets / 02</p>
+                <h2 class="text-2xl font-light mb-4">素材媒体库</h2>
+                <p class="text-[11px] text-zinc-400 leading-relaxed font-light">收纳品牌视觉灵魂，管理高清摄影、秀场视频与多媒体交互资产。</p>
+            </div>
+        </div>
+
+        <div onclick="location.href='admin-journal.html'" class="console-card p-12 rounded-sm aspect-[4/5] flex flex-col justify-between group">
+            <div class="card-num-art">03</div>
+            <div>
+                <p class="en-decoration mb-4">Storytelling / 03</p>
+                <h2 class="text-2xl font-light mb-4">品牌叙事志</h2>
+                <p class="text-[11px] text-zinc-400 leading-relaxed font-light">在文字中沉淀丝绸工艺。发布最新的品牌动态、深度专访与美学日志。</p>
+            </div>
+        </div>
+
+        <div onclick="location.href='admin-layout.html'" class="console-card p-12 rounded-sm aspect-[4/5] flex flex-col justify-between group mt-0 lg:mt-12">
+            <div class="card-num-art">04</div>
+            <div>
+                <p class="en-decoration mb-4">Layout Engine / 04</p>
+                <h2 class="text-2xl font-light mb-4">视觉引擎配置</h2>
+                <p class="text-[11px] text-zinc-400 leading-relaxed font-light">定义数字空间的呼吸感。调整首页 Banner、版式逻辑与全局视觉参数。</p>
+            </div>
+        </div>
+
+    </div>
+
+    <footer class="mt-32 flex justify-between items-center border-t border-zinc-100 pt-12">
+        <span class="en-decoration italic">Modern Web Silk Management</span>
+        <div class="flex gap-8">
+            <a href="#" class="en-decoration hover:text-black transition-colors">Documentation</a>
+            <a href="#" class="en-decoration hover:text-black transition-colors">Support</a>
+        </div>
+    </footer>
+
+    <script>
+        function logout() {
+            localStorage.removeItem('mws_admin_token');
+            window.location.href = 'login.html';
+        }
+    </script>
+</body>
+</html>

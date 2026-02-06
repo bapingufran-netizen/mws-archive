@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>M.W.S | 资产管理中心</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+        
+        body { 
+            font-family: 'Inter', "Microsoft YaHei", sans-serif; 
+            background: #ffffff; 
+            color: #000000;
+        }
+
+        /* 顶部导航：增加阴影提升层次 */
+        .modern-nav {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 2px solid #000;
+        }
+
+        /* 搜索框：增强交互感 */
+        .search-field {
+            border: none;
+            border-bottom: 2px solid #eee;
+            transition: all 0.3s ease;
+            outline: none;
+            width: 100%;
+        }
+        .search-field:focus {
+            border-bottom-color: #000;
+        }
+
+        /* 核心卡片：增加功能浮层 */
+        .media-card {
+            border: 1px solid #f0f0f0;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        .media-card:hover {
+            border-color: #000;
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+        }
+
+        /* 悬停时的按钮容器 */
+        .action-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            z-index: 20;
+        }
+        .media-card:hover .action-overlay {
+            opacity: 1;
+        }
+
+        /* 按钮风格：黑框白字，硬朗利落 */
+        .action-btn {
+            width: 80%;
+            padding: 10px 0;
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+        .action-btn:hover {
+            background: white;
+            color: black;
+            border-color: white;
+        }
+        .btn-delete {
+            color: #ff4d4f;
+            border-color: rgba(255,77,79,0.3);
+        }
+        .btn-delete:hover {
+            background: #ff4d4f;
+            color: white;
+            border-color: #ff4d4f;
+        }
+
+        .type-tag {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: black;
+            color: white;
+            padding: 4px 10px;
+            font-size: 8px;
+            font-weight: 800;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <nav class="modern-nav fixed top-0 w-full z-50 px-8 lg:px-12 py-6 flex justify-between items-center">
+        <div class="flex items-center gap-12">
+            <h1 class="text-2xl font-extrabold tracking-tighter">M.W.S / 媒体档案</h1>
+            <button onclick="location.href='admin-console.html'" class="text-[10px] font-bold tracking-widest hover:opacity-50 transition">返回控制台</button>
+        </div>
+        <div class="flex gap-4">
+            <button id="managerBtn" onclick="toggleManager()" class="px-6 py-2 border-2 border-black text-[10px] font-black uppercase hover:bg-black hover:text-white transition">进入管理模式</button>
+            <button onclick="document.getElementById('fileUpload').click()" class="px-6 py-2 bg-black text-white text-[10px] font-black uppercase shadow-lg">上传新素材</button>
+            <input type="file" id="fileUpload" class="hidden">
+        </div>
+    </nav>
+
+    <main class="pt-40 px-8 lg:px-12 pb-24">
+        
+        <div class="mb-20 flex flex-col md:flex-row justify-between items-end gap-12">
+            <div class="w-full md:w-2/5">
+                <p class="text-[9px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-3">INTERNAL SEARCH ENGINE</p>
+                <input type="text" id="searchInput" placeholder="输入名称、编号或类型进行检索..." class="search-field py-3 text-lg" oninput="handleSearch()">
+            </div>
+            
+            <div class="flex gap-10">
+                <button onclick="filter('ALL')" class="text-[11px] font-black border-b-2 border-black pb-2">全部</button>
+                <button onclick="filter('IMAGE')" class="text-[11px] font-bold text-zinc-400 hover:text-black transition pb-2">图片</button>
+                <button onclick="filter('VIDEO')" class="text-[11px] font-bold text-zinc-400 hover:text-black transition pb-2">视频</button>
+                <button onclick="filter('AUDIO')" class="text-[11px] font-bold text-zinc-400 hover:text-black transition pb-2">音频</button>
+            </div>
+        </div>
+
+        <div id="mediaGrid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
+            </div>
+
+    </main>
+
+    <div id="batchBar" class="fixed bottom-0 left-0 w-full bg-black text-white p-6 z-[60] flex justify-between items-center translate-y-full transition-transform duration-500">
+        <p id="countLabel" class="text-[10px] tracking-[0.5em] font-light">已选定 0 个资产</p>
+        <div class="flex gap-6">
+            <button onclick="toggleManager()" class="text-[10px] font-bold opacity-50 hover:opacity-100 transition">取消</button>
+            <button class="bg-red-600 px-10 py-2 text-[10px] font-black uppercase">批量销毁已选资产</button>
+        </div>
+    </div>
+
+    <script>
+        // 模拟数据结构
+        let assets = [
+            { id: 1, type: 'IMAGE', tag: '春夏系列LOOKBOOK', url: 'https://via.placeholder.com/600x800' },
+            { id: 2, type: 'VIDEO', tag: '丝绸工艺纪录片', url: 'https://via.placeholder.com/600x800/111' },
+            { id: 3, type: 'IMAGE', tag: '真丝面料细节', url: 'https://via.placeholder.com/600x800/222' }
+        ];
+
+        function render() {
+            const grid = document.getElementById('mediaGrid');
+            grid.innerHTML = assets.map(item => `
+                <div class="media-card group">
+                    <span class="type-tag">${item.type}</span>
+                    
+                    <div class="aspect-square bg-zinc-100 overflow-hidden relative">
+                        <img src="${item.url}" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000">
+                        
+                        <div class="action-overlay">
+                            <button class="action-btn" onclick="copyLink('${item.url}')">复制永久链接</button>
+                            <button class="action-btn" onclick="editInfo(${item.id})">编辑资产信息</button>
+                            <button class="action-btn" onclick="window.open('${item.url}')">全屏预览</button>
+                            <button class="action-btn btn-delete" onclick="removeAsset(${item.id})">删除此资产</button>
+                        </div>
+                    </div>
+
+                    <div class="p-5 border-t border-zinc-50 bg-white">
+                        <p class="text-[8px] font-bold text-zinc-300 mb-2 tracking-widest uppercase">Asset ID: #0${item.id}</p>
+                        <h3 class="text-[12px] font-black tracking-widest uppercase truncate">${item.tag}</h3>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 交互逻辑
+        function removeAsset(id) {
+            if(confirm('警告：此操作将永久删除该素材，无法找回。确认继续？')) {
+                assets = assets.filter(a => a.id !== id);
+                render();
+            }
+        }
+
+        function editInfo(id) {
+            const newName = prompt("请输入新的资产描述标签：");
+            if(newName) {
+                const asset = assets.find(a => a.id === id);
+                asset.tag = newName;
+                render();
+            }
+        }
+
+        function copyLink(url) {
+            navigator.clipboard.writeText(url);
+            alert("已将素材永久地址复制到剪贴板。");
+        }
+
+        function toggleManager() {
+            const bar = document.getElementById('batchBar');
+            const isHiding = bar.classList.contains('translate-y-full');
+            bar.classList.toggle('translate-y-full', !isHiding);
+            document.getElementById('managerBtn').innerText = isHiding ? "退出管理" : "进入管理模式";
+        }
+
+        window.onload = render;
+    </script>
+</body>
+</html>

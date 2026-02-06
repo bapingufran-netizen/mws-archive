@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>M.W.S | 视觉引擎配置</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+        body { font-family: 'Inter', "Microsoft YaHei", sans-serif; background: #fff; color: #000; }
+        .modern-nav { background: rgba(255, 255, 255, 0.98); border-bottom: 2px solid #000; }
+        
+        /* 拨码开关交互 */
+        .switch-input { display: none; }
+        .switch-label {
+            width: 44px; height: 22px; background: #eee;
+            border-radius: 0; position: relative; cursor: pointer;
+            transition: 0.3s; display: inline-block;
+        }
+        .switch-label::after {
+            content: ''; position: absolute; top: 2px; left: 2px;
+            width: 18px; height: 18px; background: #fff; transition: 0.3s;
+        }
+        .switch-input:checked + .switch-label { background: #000; }
+        .switch-input:checked + .switch-label::after { left: 24px; }
+
+        .config-card { border: 1px solid #eee; transition: 0.4s; }
+        .config-card:hover { border-color: #000; }
+
+        .btn-press:active { transform: scale(0.98); }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <nav class="modern-nav fixed top-0 w-full z-50 px-8 lg:px-12 py-6 flex justify-between items-center">
+        <div class="flex items-center gap-12">
+            <h1 class="text-2xl font-extrabold tracking-tighter uppercase">M.W.S / DESIGN</h1>
+            <button onclick="location.href='admin-console.html'" class="text-[10px] font-bold tracking-widest btn-press">返回中枢</button>
+        </div>
+        <button onclick="saveAllConfigs()" class="bg-black text-white px-8 py-3 text-[11px] font-black uppercase btn-press shadow-xl">应用全局变更</button>
+    </nav>
+
+    <main class="pt-40 px-8 lg:px-24 pb-24 max-w-7xl mx-auto">
+        
+        <header class="mb-20">
+            <h2 class="text-6xl font-light tracking-tighter mb-4">视觉引擎</h2>
+            <p class="text-[10px] font-bold text-zinc-400 tracking-[0.4em] uppercase font-bold">Display Engine & Layout Configuration</p>
+            <div class="w-16 h-[2px] bg-black mt-8"></div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+            
+            <section class="config-card p-10">
+                <p class="text-[9px] font-black text-zinc-300 uppercase tracking-widest mb-6">#01 / Banner 视觉</p>
+                <h3 class="text-xl font-black mb-8">首屏滚动大图管理</h3>
+                <div class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-bold">自动轮播模式</span>
+                        <input type="checkbox" id="autoPlay" class="switch-input" checked>
+                        <label for="autoPlay" class="switch-label"></label>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold mb-3 text-zinc-400 uppercase">当前首选大图 URL</p>
+                        <input type="text" value="https://cloudinary.com/mws/hero-v2.jpg" class="w-full border-b border-zinc-200 py-2 text-sm outline-none focus:border-black transition">
+                    </div>
+                </div>
+            </section>
+
+            <section class="config-card p-10">
+                <p class="text-[9px] font-black text-zinc-300 uppercase tracking-widest mb-6">#02 / Announcements</p>
+                <h3 class="text-xl font-black mb-8">全站置顶公告栏</h3>
+                <div class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-bold">启用顶部通知</span>
+                        <input type="checkbox" id="showNotice" class="switch-input">
+                        <label for="showNotice" class="switch-label"></label>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-bold mb-3 text-zinc-400 uppercase">公告内容 (支持中文)</p>
+                        <textarea class="w-full border border-zinc-100 p-4 text-sm outline-none focus:border-black transition h-24" placeholder="例如：2026 春夏系列“幻影”现已开放预订"></textarea>
+                    </div>
+                </div>
+            </section>
+
+            <section class="config-card p-10">
+                <p class="text-[9px] font-black text-zinc-300 uppercase tracking-widest mb-6">#03 / Global Aesthetics</p>
+                <h3 class="text-xl font-black mb-8">品牌视觉深度偏好</h3>
+                <div class="grid grid-cols-2 gap-8">
+                    <div class="space-y-2">
+                        <p class="text-[10px] font-bold text-zinc-400">导航栏厚度</p>
+                        <select class="w-full border-b border-black py-1 text-sm outline-none font-bold bg-transparent">
+                            <option>Slim (极细)</option><option>Standard</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="text-[10px] font-bold text-zinc-400">全局字体渲染</p>
+                        <select class="w-full border-b border-black py-1 text-sm outline-none font-bold bg-transparent">
+                            <option>Inter (Modern)</option><option>Noto Serif (宋体)</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <section class="config-card p-10 flex flex-col justify-between">
+                <div>
+                    <p class="text-[9px] font-black text-zinc-300 uppercase tracking-widest mb-6">#04 / System Maintenance</p>
+                    <h3 class="text-xl font-black mb-4">系统维护模式</h3>
+                    <p class="text-xs text-zinc-400 leading-relaxed mb-8">启用后，访客将看到“品牌更新中”的精美待机画面，期间无法进行购买。</p>
+                </div>
+                <button class="w-full py-4 border-2 border-red-600 text-red-600 text-[11px] font-black uppercase hover:bg-red-600 hover:text-white transition btn-press">激活维护隔离层</button>
+            </section>
+
+        </div>
+    </main>
+
+    <script>
+        function saveAllConfigs() {
+            // 模拟保存交互反馈
+            const btn = event.target;
+            const originalText = btn.innerText;
+            btn.innerText = "正在部署变更...";
+            btn.style.opacity = "0.5";
+            
+            setTimeout(() => {
+                btn.innerText = "变更已全站生效";
+                btn.classList.replace('bg-black', 'bg-green-600');
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.classList.replace('bg-green-600', 'bg-black');
+                    btn.style.opacity = "1";
+                }, 2000);
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
