@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>M.W.S | 数据中枢 & 商业情报</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background: #fafafa; color: #000; }
+        .data-card { background: #fff; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); border: 1px solid #f0f0f0; }
+        .nav-tab { cursor: pointer; padding: 12px 24px; font-size: 11px; font-weight: 900; letter-spacing: 0.2em; transition: 0.3s; color: #ccc; border-bottom: 2px solid transparent; }
+        .nav-tab.active { color: #000; border-bottom-color: #000; }
+        .status-tag { padding: 4px 10px; font-size: 9px; font-weight: 900; text-transform: uppercase; border-radius: 4px; }
+        .status-pending { background: #fff1f0; color: #ff4d4f; }
+        .status-paid { background: #f6ffed; color: #52c41a; }
+        .scroll-hide::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <nav class="bg-white border-b border-zinc-100 px-8 py-6 flex justify-between items-center fixed top-0 w-full z-50">
+        <div class="flex items-center gap-10">
+            <h1 class="text-xl font-black tracking-tighter uppercase">M.W.S / DATA CENTER</h1>
+            <div class="flex gap-4">
+                <div onclick="switchTab('orders')" id="tab-orders" class="nav-tab active">ORDERS / 订单</div>
+                <div onclick="switchTab('crm')" id="tab-crm" class="nav-tab">CRM / 会员</div>
+                <div onclick="switchTab('stats')" id="tab-stats" class="nav-tab">REPORTS / 报表</div>
+            </div>
+        </div>
+        <button onclick="location.href='admin-console.html'" class="text-[10px] font-bold tracking-widest uppercase hover:opacity-50">返回控制台</button>
+    </nav>
+
+    <main class="pt-32 px-8 pb-12 flex-1">
+        
+        <section id="view-orders" class="data-view space-y-6">
+            <div class="flex justify-between items-end mb-8">
+                <h2 class="text-2xl font-black uppercase tracking-tight">实时订单流</h2>
+                <div class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Total Orders: <span id="order-count">0</span></div>
+            </div>
+            <div class="data-card overflow-hidden">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-zinc-50 text-[10px] font-black text-zinc-400 uppercase">
+                        <tr>
+                            <th class="p-6">时间/单号</th>
+                            <th class="p-6">客户信息</th>
+                            <th class="p-6">商品/规格/SKU</th>
+                            <th class="p-6">状态控制</th>
+                            <th class="p-6">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="order-list" class="text-xs font-medium divide-y divide-zinc-50">
+                        </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="view-crm" class="data-view hidden space-y-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="data-card p-8">
+                    <p class="text-[10px] font-black text-zinc-300 uppercase tracking-widest mb-2">平均年龄</p>
+                    <p class="text-4xl font-black tracking-tighter" id="avg-age">0</p>
+                </div>
+                <div class="data-card p-8 bg-black text-white">
+                    <p class="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">总消费金额 (GMV)</p>
+                    <p class="text-4xl font-black tracking-tighter" id="total-gmv">¥0</p>
+                </div>
+            </div>
+            <div class="data-card p-8">
+                <h3 class="text-sm font-black uppercase mb-6 tracking-widest">会员详细档案库</h3>
+                <div id="user-grid" class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    </div>
+            </div>
+        </section>
+
+        <section id="view-stats" class="data-view hidden">
+            <div class="data-card p-12">
+                <h2 class="text-xl font-black uppercase mb-10 tracking-widest text-center">多维销售统计 (开发中)</h2>
+                <div id="stats-summary" class="space-y-4"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- 鉴权门禁 ---
+        (function checkAuth() {
+            const token = localStorage.getItem('mws_admin_token');
+            if (!token) window.location.href = 'login.html';
+        })();
+
+        // --- 视图切换 ---
+        function switchTab(tab) {
+            document.querySelectorAll('.data-view').forEach(v => v.classList.add('hidden'));
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(`view-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            if(tab === 'orders') fetchOrders();
+            if(tab === 'crm') fetchUsers();
+        }
+
+        // --- 核心：拉取并渲染订单 ---
+        async function fetchOrders() {
+            const res = await fetch('/api/orders');
+            const data = await res.json();
+            document.getElementById('order-count').innerText = data.length;
+            document.getElementById('order-list').innerHTML = data.map(o => `
+                <tr class="hover:bg-zinc-50/50 transition">
+                    <td class="p-6">
+                        <div class="font-black text-zinc-300 mb-1">#${o.order_no || o.id}</div>
+                        <div class="text-[10px] text-zinc-400">${new Date(o.created_at).toLocaleString()}</div>
+                    </td>
+                    <td class="p-6">
+                        <div class="font-bold">${o.customer_name}</div>
+                        <div class="text-[10px] text-zinc-400">${o.phone}</div>
+                        <div class="text-[9px] mt-1 text-zinc-300 truncate w-32">${o.address}</div>
+                    </td>
+                    <td class="p-6">
+                        <div class="font-bold uppercase">${o.product_name}</div>
+                        <div class="flex gap-2 text-[9px] font-black text-zinc-400 mt-1 uppercase">
+                            <span>${o.spec_info}</span>
+                            <span class="bg-zinc-100 px-1">SKU: ${o.sku_code}</span>
+                        </div>
+                    </td>
+                    <td class="p-6">
+                        <div class="flex gap-2">
+                            <span class="status-tag ${o.pay_status === '已支付' ? 'status-paid' : 'status-pending'}">${o.pay_status}</span>
+                            <span class="status-tag bg-zinc-100">${o.ship_status}</span>
+                        </div>
+                    </td>
+                    <td class="p-6">
+                        <button class="text-[10px] font-black border border-black px-4 py-2 hover:bg-black hover:text-white transition">管理状态</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // --- 核心：拉取并渲染会员资料 ---
+        async function fetchUsers() {
+            const res = await fetch('/api/users');
+            const data = await res.json();
+            
+            // 计算数据看板
+            const totalSpent = data.reduce((sum, u) => sum + (u.total_spent || 0), 0);
+            const avgAge = data.length ? Math.round(data.reduce((sum, u) => sum + (u.age || 0), 0) / data.length) : 0;
+            
+            document.getElementById('total-gmv').innerText = `¥${totalSpent.toLocaleString()}`;
+            document.getElementById('avg-age').innerText = avgAge;
+
+            document.getElementById('user-grid').innerHTML = data.map(u => `
+                <div class="p-6 border border-zinc-100 rounded-2xl hover:border-black transition">
+                    <div class="text-[10px] font-black text-zinc-300 mb-4 uppercase">User Archive #${u.id}</div>
+                    <div class="text-sm font-black uppercase mb-1">${u.nickname || u.username}</div>
+                    <div class="text-[10px] text-zinc-400 font-bold mb-6">AGE: ${u.age || '-'} / JOINED: ${new Date(u.created_at).toLocaleDateString()}</div>
+                    <div class="flex justify-between items-end">
+                        <span class="text-[9px] font-black uppercase tracking-widest text-zinc-400">Total Spent</span>
+                        <span class="font-black">¥${u.total_spent || 0}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.onload = () => fetchOrders();
+    </script>
+</body>
+</html>
