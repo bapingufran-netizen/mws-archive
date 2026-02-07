@@ -49,17 +49,17 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
             <section class="config-card p-10">
                 <p class="text-[9px] font-black text-zinc-300 uppercase tracking-widest mb-6">#01 / Banner 视觉</p>
-                <h3 class="text-xl font-black mb-8">首屏滚动大图管理</h3>
+                <h3 class="text-xl font-black mb-8">首屏大图管理</h3>
                 <div class="space-y-6">
                     <div class="flex justify-between items-center">
                         <span class="text-sm font-bold">自动轮播模式</span>
-                        <input type="checkbox" id="autoPlay" class="switch-input" checked>
+                        <input type="checkbox" id="autoPlay" class="switch-input">
                         <label for="autoPlay" class="switch-label"></label>
                     </div>
                     <div>
                         <p class="text-[10px] font-bold mb-3 text-zinc-400 uppercase">当前首选大图 URL</p>
-                        <input type="text" id="hero-url-input" value="https://res.cloudinary.com/dbyud7vlz/image/upload/v1770366376/nsm7l5gghk5ve1yvvffb.png" class="w-full border-b border-zinc-200 py-2 text-sm outline-none focus:border-black transition mb-4">
-                        <button onclick="openUploadWidget()" class="w-full py-3 bg-zinc-50 border border-zinc-200 text-[9px] font-bold tracking-[0.2em] uppercase hover:bg-black hover:text-white transition duration-500">
+                        <input type="text" id="hero-url-input" class="w-full border-b border-zinc-200 py-2 text-sm outline-none focus:border-black transition mb-4">
+                        <button onclick="openUploadWidget('hero-url-input')" class="w-full py-3 bg-zinc-50 border border-zinc-200 text-[9px] font-bold tracking-[0.2em] uppercase hover:bg-black hover:text-white transition duration-500">
                             Cloudinary 智能上传
                         </button>
                     </div>
@@ -77,32 +77,33 @@
                     </div>
                     <div>
                         <p class="text-[10px] font-bold mb-3 text-zinc-400 uppercase">公告内容 (支持中文)</p>
-                        <textarea id="noticeContent" class="w-full border border-zinc-100 p-4 text-sm outline-none focus:border-black transition h-24" placeholder="例如：2026 春夏系列“幻影”现已开放预订"></textarea>
+                        <textarea id="noticeContent" class="w-full border border-zinc-100 p-4 text-sm outline-none focus:border-black transition h-24" placeholder="例如：2026 春夏系列现已开放预订"></textarea>
                     </div>
                 </div>
             </section>
         </div>
-<section class="config-card p-10 mt-12">
-    <p class="text-[9px] font-black text-zinc-300 uppercase tracking-widest mb-6">#05 / Footer Aesthetics</p>
-    <h3 class="text-xl font-black mb-8">底部展示区域自定义</h3>
-    <div class="space-y-6">
-        <div>
-            <p class="text-[10px] font-bold mb-3 text-zinc-400 uppercase">底部小标题 (e.g. 01. HERITAGE & CRAFT)</p>
-            <input type="text" id="footer-title-input" placeholder="输入标题..." class="w-full border-b border-zinc-200 py-2 text-sm outline-none focus:border-black transition mb-4">
-        </div>
-        <div>
-            <p class="text-[10px] font-bold mb-3 text-zinc-400 uppercase">底部描述文字</p>
-            <textarea id="footer-desc-input" class="w-full border border-zinc-100 p-4 text-sm outline-none focus:border-black transition h-20" placeholder="描述品牌理念..."></textarea>
-        </div>
-        <div>
-            <p class="text-[10px] font-bold mb-3 text-zinc-400 uppercase">底部展示图 URL</p>
-            <input type="text" id="footer-img-input" class="w-full border-b border-zinc-200 py-2 text-sm outline-none focus:border-black transition mb-4">
-            <button onclick="openFooterUpload()" class="w-full py-3 bg-zinc-50 border border-zinc-200 text-[9px] font-bold tracking-[0.2em] uppercase hover:bg-black hover:text-white transition duration-500">
-                上传底部展示图
-            </button>
-        </div>
-    </div>
-</section>
+
+        <section class="config-card p-10 mt-12">
+            <p class="text-[9px] font-black text-zinc-300 uppercase tracking-widest mb-6">#05 / Footer Aesthetics</p>
+            <h3 class="text-xl font-black mb-8">底部展示区域自定义</h3>
+            <div class="space-y-6">
+                <div>
+                    <p class="text-[10px] font-bold mb-3 text-zinc-400 uppercase">底部小标题 (e.g. 01. HERITAGE & CRAFT)</p>
+                    <input type="text" id="footer-title-input" placeholder="输入标题..." class="w-full border-b border-zinc-200 py-2 text-sm outline-none focus:border-black transition mb-4">
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold mb-3 text-zinc-400 uppercase">底部描述文字</p>
+                    <textarea id="footer-desc-input" class="w-full border border-zinc-100 p-4 text-sm outline-none focus:border-black transition h-20" placeholder="描述品牌理念..."></textarea>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold mb-3 text-zinc-400 uppercase">底部展示图 URL</p>
+                    <input type="text" id="footer-img-input" class="w-full border-b border-zinc-200 py-2 text-sm outline-none focus:border-black transition mb-4">
+                    <button onclick="openUploadWidget('footer-img-input')" class="w-full py-3 bg-zinc-50 border border-zinc-200 text-[9px] font-bold tracking-[0.2em] uppercase hover:bg-black hover:text-white transition duration-500">
+                        上传底部展示图
+                    </button>
+                </div>
+            </div>
+        </section>
     </main>
 
     <script>
@@ -110,72 +111,88 @@
         const uploadPreset = "aliang"; 
         const ADMIN_AUTH_KEY = "MWS2026"; 
 
-        function openUploadWidget() {
+        // 通用上传组件，支持多个目标
+        function openUploadWidget(targetId) {
             cloudinary.openUploadWidget({
                 cloudName: cloudName,
                 uploadPreset: uploadPreset,
                 sources: ['local', 'url'],
-                showAdvancedOptions: false,
                 cropping: true,
                 multiple: false,
-                theme: "minimal",
-                palette: {
-                    window: "#FFFFFF",
-                    sourceBg: "#FFFFFF",
-                    windowBorder: "#000000",
-                    tabIcon: "#000000",
-                    inactiveTabIcon: "#8E8E8E",
-                    menuIcons: "#000000",
-                    link: "#000000",
-                    action: "#000000",
-                    inProgress: "#000000",
-                    complete: "#000000",
-                    error: "#E41E1E",
-                    textDark: "#000000",
-                    textLight: "#FFFFFF"
-                }
+                theme: "minimal"
             }, (error, result) => {
                 if (!error && result && result.event === "success") {
-                    document.getElementById('hero-url-input').value = result.info.secure_url;
+                    document.getElementById(targetId).value = result.info.secure_url;
                 }
             });
         }
 
-        async function saveAllConfigs() {
-        const btn = document.getElementById('save-btn'); // 确保你的按钮有这个 id
-        const heroUrl = document.getElementById('hero-url-input').value;
-
-        btn.innerText = "正在同步云端...";
-        btn.disabled = true;
-
-        try {
-        const response = await fetch('/api/settings', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'x-mws-auth': 'MWS2026' // 🔒 关键：这是你后端的通关口令
-            },
-            body: JSON.stringify({ "hero_banner": heroUrl })
-        });
-
-        const result = await response.json();
-        if (result.success) {
-            btn.innerText = "变更已全站生效";
-            btn.style.backgroundColor = "#16a34a"; // 变绿代表数据库存好了
+        // 页面初始化：获取当前数据库配置
+        async function fetchCurrentConfigs() {
+            try {
+                const res = await fetch('/api/settings');
+                const config = await res.json();
+                
+                if (config.hero_banner) document.getElementById('hero-url-input').value = config.hero_banner;
+                if (config.hero_autoplay) document.getElementById('autoPlay').checked = (config.hero_autoplay === "on");
+                if (config.show_notice) document.getElementById('showNotice').checked = (config.show_notice === "true");
+                if (config.notice_content) document.getElementById('noticeContent').value = config.notice_content;
+                
+                // 加载底部配置
+                if (config.footer_title) document.getElementById('footer-title-input').value = config.footer_title;
+                if (config.footer_desc) document.getElementById('footer-desc-input').value = config.footer_desc;
+                if (config.footer_img) document.getElementById('footer-img-input').value = config.footer_img;
+            } catch (err) {
+                console.error("配置加载失败", err);
+            }
         }
-    } catch (err) {
-        btn.innerText = "认证失败";
-        btn.style.backgroundColor = "#dc2626";
-    }
 
-    setTimeout(() => {
-        btn.innerText = "应用全局变更";
-        btn.style.backgroundColor = "#000";
-        btn.disabled = false;
-    }, 2000);
-}
+        async function saveAllConfigs() {
+            const btn = document.getElementById('save-btn');
+            
+            // 构建发送到后端的数据包
+            const payload = {
+                "hero_banner": document.getElementById('hero-url-input').value,
+                "hero_autoplay": document.getElementById('autoPlay').checked ? "on" : "off",
+                "show_notice": document.getElementById('showNotice').checked ? "true" : "false",
+                "notice_content": document.getElementById('noticeContent').value,
+                "footer_title": document.getElementById('footer-title-input').value,
+                "footer_desc": document.getElementById('footer-desc-input').value,
+                "footer_img": document.getElementById('footer-img-input').value
+            };
+
+            btn.innerText = "正在同步云端...";
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-mws-auth': ADMIN_AUTH_KEY 
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    btn.innerText = "变更已全站生效";
+                    btn.style.backgroundColor = "#16a34a";
+                }
+            } catch (err) {
+                btn.innerText = "同步失败";
+                btn.style.backgroundColor = "#dc2626";
+            }
+
+            setTimeout(() => {
+                btn.innerText = "应用全局变更";
+                btn.style.backgroundColor = "#000";
+                btn.disabled = false;
+            }, 2000);
+        }
+
+        // 入口启动
+        window.onload = fetchCurrentConfigs;
     </script>
 </body>
 </html>
-
-
