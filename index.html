@@ -30,7 +30,7 @@
             height: calc(100vh - 220px); overflow-y: auto; padding-bottom: 50px;
         }
 
-        /* ✨ 导航美化：更圆润、更大 (18px) */
+        /* ✨ 导航美化：圆润且富有亲和力 (18px) */
         .nav-link {
             font-family: 'Montserrat', sans-serif; 
             font-size: 18px; 
@@ -38,7 +38,7 @@
             letter-spacing: 0.05em; 
             text-transform: uppercase;
             color: #d1d1d1; 
-            margin-bottom: 38px; /* 进一步拉开间距，更显高级 */
+            margin-bottom: 38px; 
             cursor: pointer; 
             display: block;
             transition: 0.5s cubic-bezier(0.19, 1, 0.22, 1);
@@ -51,7 +51,6 @@
         .product-card { transition: opacity 0.8s ease, transform 0.8s ease; opacity: 0; transform: translateY(30px); }
         .product-card.visible { opacity: 1; transform: translateY(0); }
 
-        /* 故事区域样式 */
         .brand-story-section { padding: 150px 10%; background: #f9f9f9; text-align: center; }
         .story-content-wrapper { max-width: 1200px; margin: 0 auto; display: grid; gap: 80px; grid-template-columns: 1fr; }
         @media (min-width: 1024px) { .story-content-wrapper { grid-template-columns: 1fr 1fr; } }
@@ -94,7 +93,7 @@
     </div>
 
     <section class="hero-banner">
-        <img id="main-hero-img" src="uploads/downloaded-image.png" class="hero-video-bg" alt="Luxury Archive">
+        <img id="main-hero-img" src="" class="hero-video-bg" alt="Luxury Archive">
         <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-white/60"></div>
         
         <div class="absolute bottom-[12%] left-1/2 -translate-x-1/2 text-center text-black w-full animate__animated animate__fadeInUp">
@@ -124,10 +123,10 @@
         <div class="story-content-wrapper">
             <div class="story-text">
                 <h4 id="display-footer-title" class="text-[9px] font-bold uppercase tracking-widest mb-4">01. HERITAGE & CRAFT</h4>
-                <p id="display-footer-desc" class="text-[11px] text-zinc-500 leading-relaxed max-w-xs">MR WANG SILK 汲取高级定制精髓，将真丝纤维与现代廓形结合。</p>
+                <p id="display-footer-desc" class="text-[11px] text-zinc-500 leading-relaxed max-w-xs"></p>
             </div>
             <div class="footer-image-container">
-                <img id="display-footer-img" src="uploads/downloaded-image.png" class="story-image shadow-2xl" alt="Brand Story Image">
+                <img id="display-footer-img" src="" class="story-image shadow-2xl" alt="Brand Story Image">
             </div>
         </div>
     </section>
@@ -137,7 +136,6 @@
     </footer>
 
     <script>
-        // JS 逻辑部分保持 100% 原样，确保兼容性
         let currentUser = JSON.parse(localStorage.getItem('mws_user')) || null;
         let allProducts = [];
 
@@ -184,11 +182,27 @@
             renderGrid(filtered);
         }
 
+        // ✨ 视觉引擎：让后台设置重新关联
         async function applyLiveSettings() {
             try {
                 const res = await fetch('/api/settings');
                 const config = await res.json();
+                
+                // 1. 同步首屏 Banner
                 if (config.hero_banner) document.getElementById('main-hero-img').src = config.hero_banner;
+                
+                // 2. 同步底部标题
+                if (config.footer_title) document.getElementById('display-footer-title').innerText = config.footer_title;
+                
+                // 3. 同步底部描述
+                if (config.footer_desc) document.getElementById('display-footer-desc').innerText = config.footer_desc;
+                
+                // 4. 同步底部展示图 (解决你提到的不起作用的问题)
+                if (config.footer_img) {
+                    const fImg = document.getElementById('display-footer-img');
+                    if (fImg) fImg.src = config.footer_img;
+                }
+                
                 const noticeBar = document.getElementById('top-notice-bar');
                 if (noticeBar) {
                     noticeBar.style.display = (config.show_notice === "true") ? "block" : "none";
