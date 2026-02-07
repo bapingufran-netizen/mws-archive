@@ -8,12 +8,8 @@ const app = express();
 // 🔗 数据库连接 (已优化 IPv4 强制连接)
 // ==========================================
 const pool = new Pool({
-    user: 'postgres',
-    host: 'db.kzjtjgdytnptcqgqfhcw.supabase.co',
-    database: 'postgres',
-    password: 'Chenliang123=xia',
-    port: 5432,
-    family: 4, 
+    // 让程序自动读取 Render 环境变量中的 DATABASE_URL
+    connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false },
     connectionTimeoutMillis: 10000,
     idleTimeoutMillis: 30000
@@ -107,3 +103,4 @@ const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
     console.log(`🚀 M.W.S 系统在线 (无验证模式) | 端口: ${PORT}`);
 });
+
