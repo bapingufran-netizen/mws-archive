@@ -113,15 +113,11 @@ app.post('/api/buy', (req, res) => {
 
 // ✨ 修复后的登录接口：自动识别用户名或邮箱
 app.post('/api/login', (req, res) => {
-    const { username, password } = req.body; // 兼容前端发送的 username 字段
-    db.get("SELECT * FROM users WHERE (email = ? OR nickname = ?) AND password = ?", [username, username, password], (err, user) => {
-        if (err || !user) {
-            return res.json({ success: false, message: "凭据错误或用户不存在" });
-        }
-        res.json({ 
-            success: true, 
-            user: { id: user.id, nickname: user.nickname, role: user.role, email: user.email } 
-        });
+    const { username, password } = req.body; // 必须是 username，对接前端
+    db.get("SELECT * FROM users WHERE (email = ? OR nickname = ?) AND password = ?", 
+    [username, username, password], (err, user) => {
+        if (err || !user) return res.json({ success: false, message: "凭据错误" });
+        res.json({ success: true, user: { id: user.id, nickname: user.nickname, role: user.role } });
     });
 });
 
@@ -145,3 +141,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 M.W.S System Running on Port ${PORT}`);
 });
+
