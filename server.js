@@ -1,5 +1,5 @@
 const express = require('express');
-const { Pool } = require('pg'); // 替换 sqlite3
+const { Pool } = require('pg');
 const bodyParser = require('body-parser');
 const multer = require('multer');
 const path = require('path');
@@ -12,52 +12,76 @@ const app = express();
 // ==========================================
 const pool = new Pool({
     connectionString: "postgresql://postgres:[Chenliang123=xia]@db.kzjtjgdytnptcqgqfhcw.supabase.co:5432/postgres",
-    ssl: { rejectUnauthorized: false } // Supabase 连接必须开启 SSL
+    ssl: { rejectUnauthorized: false } 
 });
 
+// ==========================================
+// 🛠️ 中间件配置
+// ==========================================
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(express.static(__dirname));
 app.use('/uploads', express.static('uploads'));
+
+// 🌍 核心修复：允许跨域请求和自定义 Header
+app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, x-mws-auth");
+    res.header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+    next();
+});
 
 if (!fs.existsSync('uploads')) fs.mkdirSync('uploads');
 const upload = multer({ dest: 'uploads/' });
 
 // ==========================================
-// ✨ 管理员校验逻辑 (保持原样)
+// ✨ 管理员校验逻辑 (修复：增加日志和兼容性)
 // ==========================================
 const MWS_ADMIN_KEY = "MWS2026"; 
 
 const adminGuard = (req, res, next) => {
-    if (req.headers['x-mws-auth'] === MWS_ADMIN_KEY) {
+    // Node.js 会自动将 header 转为小写，这里进行标准获取
+    const clientKey = req.headers['x-mws-auth']; 
+    
+    if (clientKey === MWS_ADMIN_KEY) {
         next();
     } else {
+        console.log(`[认证失败] 客户端尝试访问，提供的 Key 为: ${clientKey || '空'}`);
         res.status(403).json({ success: false, message: "身份验证失败：拒绝访问" });
     }
 };
 
-// --- 1. 产品 API ---
-
+// ==========================================
+// 📦 产品 API
+// ==========================================
 app.get('/api/products', async (req, res) => {
     try {
         const result = await pool.query("SELECT * FROM products ORDER BY id DESC");
         res.json(result.rows || []);
     } catch (err) {
+        console.error("获取列表失败:", err);
         res.json([]);
     }
 });
 
 app.post('/api/products', adminGuard, async (req, res) => {
     const { id, name, price, image, category, description, size_info, colors, detail_images, skus } = req.body;
-    const s = (data) => (typeof data === 'object' ? JSON.stringify(data) : data);
+    
+    // 数据格式化处理：确保存入数据库的是字符串
+    const s = (data) => (typeof data === 'object' ? JSON.stringify(data) : (data || '[]'));
     
     try {
-        if (id) {
+        if (id && id !== "null") {
+            // 更新逻辑
             await pool.query(
                 `UPDATE products SET name=$1, price=$2, image=$3, category=$4, description=$5, size_info=$6, colors=$7, detail_images=$8, skus=$9 WHERE id=$10`,
                 [name, price, image, category, description, size_info, s(colors), s(detail_images), s(skus), id]
             );
-            res.json({ success: true, msg: "更新成功" });
+            res.json({ success: true, msg: "档案已更新" });
         } else {
+            // 新增逻辑
             const result = await pool.query(
                 `INSERT INTO products (name, price, image, category, description, size_info, colors, detail_images, skus) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
                 [name, price, image, category, description, size_info, s(colors), s(detail_images), s(skus)]
@@ -65,7 +89,8 @@ app.post('/api/products', adminGuard, async (req, res) => {
             res.json({ success: true, id: result.rows[0].id, msg: "发布成功" });
         }
     } catch (err) {
-        res.status(500).json({ success: false, msg: "数据库操作失败" });
+        console.error("数据库操作错误:", err);
+        res.status(500).json({ success: false, msg: "云端存储失败" });
     }
 });
 
@@ -74,12 +99,13 @@ app.delete('/api/products/:id', adminGuard, async (req, res) => {
         await pool.query("DELETE FROM products WHERE id = $1", [req.params.id]);
         res.json({ success: true, message: "档案已成功移除" });
     } catch (err) {
-        res.status(500).json({ success: false, message: "数据库删除失败" });
+        res.status(500).json({ success: false, message: "删除失败" });
     }
 });
 
-// --- 2. 配置管理 API (Settings) ---
-
+// ==========================================
+// ⚙️ 配置管理 API (Settings)
+// ==========================================
 app.get('/api/settings', async (req, res) => {
     try {
         const result = await pool.query("SELECT * FROM settings");
@@ -96,27 +122,26 @@ app.post('/api/settings', adminGuard, async (req, res) => {
     try {
         for (const key of Object.keys(settings)) {
             if (settings[key] !== undefined) {
-                // 使用 PostgreSQL 的 UPSERT 语法替换 INSERT OR REPLACE
                 await pool.query(
                     `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2`,
                     [key, String(settings[key])]
                 );
             }
         }
-        res.json({ success: true, msg: "视觉引擎配置已同步" });
+        res.json({ success: true, msg: "配置已同步" });
     } catch (err) {
         res.status(500).json({ success: false });
     }
 });
 
-// --- 3. 订单与用户 API ---
-
+// ==========================================
+// 🛒 订单 API
+// ==========================================
 app.post('/api/buy', async (req, res) => {
     const { productId, specKey, customerName, phone, address, quantity, paymentMethod } = req.body;
     try {
         const productResult = await pool.query("SELECT * FROM products WHERE id = $1", [productId]);
         const product = productResult.rows[0];
-        
         if (!product) return res.status(404).json({ success: false });
         
         const skus = JSON.parse(product.skus || '{}');
@@ -129,43 +154,6 @@ app.post('/api/buy', async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ success: false, msg: err.message });
-    }
-});
-
-app.post('/api/login', async (req, res) => {
-    const { username, password } = req.body; 
-    try {
-        const result = await pool.query(
-            "SELECT * FROM users WHERE (email = $1 OR nickname = $2) AND password = $3",
-            [username, username, password]
-        );
-        const user = result.rows[0];
-        if (!user) return res.json({ success: false, message: "凭据错误" });
-        res.json({ success: true, user: { id: user.id, nickname: user.nickname, role: user.role } });
-    } catch (err) {
-        res.json({ success: false, message: "登录异常" });
-    }
-});
-
-app.post('/api/register', async (req, res) => {
-    const { username, nickname, password } = req.body;
-    try {
-        await pool.query(
-            "INSERT INTO users (email, nickname, password, role) VALUES ($1, $2, $3, 'user')",
-            [username, nickname, password]
-        );
-        res.json({ success: true });
-    } catch (err) {
-        res.json({ success: false, message: "注册失败：账号可能已存在" });
-    }
-});
-
-app.get('/api/users_hub', adminGuard, async (req, res) => {
-    try {
-        const result = await pool.query("SELECT id, username, nickname, age, total_spent, created_at FROM users_hub");
-        res.json(result.rows || []);
-    } catch (err) {
-        res.json([]);
     }
 });
 
