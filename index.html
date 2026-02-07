@@ -17,6 +17,20 @@
             border-bottom: 0.5px solid #f0f0f0;
         }
 
+        /* 顶部公告条样式 */
+        #top-notice-bar {
+            width: 100%;
+            background: #000;
+            color: #fff;
+            font-size: 10px;
+            padding: 8px 0;
+            text-align: center;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            font-weight: bold;
+            display: none; /* 默认隐藏，由后台开关控制 */
+        }
+
         .side-nav {
             position: fixed; left: 40px; top: 160px; z-index: 90; width: 220px;
             height: calc(100vh - 200px); overflow-y: auto; padding-bottom: 50px;
@@ -58,8 +72,12 @@
 <body>
 
     <header class="brand-header animate__animated animate__fadeInDown">
-        <h1 class="text-3xl font-light tracking-[0.5em] uppercase cursor-pointer" onclick="location.reload()">MR WANG SILK</h1>
-        <p class="text-[9px] tracking-[0.4em] text-gray-400 mt-2 uppercase">Privé Collection</p>
+        <div id="top-notice-bar"></div>
+        
+        <div class="flex flex-col items-center justify-center flex-1">
+            <h1 class="text-3xl font-light tracking-[0.5em] uppercase cursor-pointer" onclick="location.reload()">MR WANG SILK</h1>
+            <p class="text-[9px] tracking-[0.4em] text-gray-400 mt-2 uppercase">Privé Collection</p>
+        </div>
         
         <div class="absolute right-12 top-1/2 -translate-y-1/2 flex items-center gap-6">
             <button id="user-btn" onclick="openAuth()" class="text-[9px] border-b border-transparent pb-1 opacity-40 hover:opacity-100 transition uppercase tracking-widest font-bold">Login</button>
@@ -70,7 +88,6 @@
     <div id="auth-modal" class="fixed inset-0 z-[200] flex items-center justify-center p-6">
         <div class="bg-white w-full max-w-[380px] p-12 rounded-[2rem] shadow-2xl relative animate__animated animate__zoomIn">
             <button onclick="closeAuth()" class="absolute top-8 right-8 text-zinc-300 hover:text-black transition">✕</button>
-            
             <div id="login-form">
                 <h3 class="text-xs font-bold tracking-[0.3em] uppercase mb-10 text-center">Member Login</h3>
                 <div class="space-y-6">
@@ -82,7 +99,6 @@
                     New? <span class="text-black cursor-pointer underline font-bold" onclick="toggleAuth('reg')">Register</span>
                 </p>
             </div>
-
             <div id="reg-form" class="hidden">
                 <h3 class="text-xs font-bold tracking-[0.3em] uppercase mb-10 text-center">Create Account</h3>
                 <div class="space-y-6">
@@ -99,9 +115,7 @@
     </div>
 
     <section class="hero-banner relative overflow-hidden">
-        <img id="main-hero-img" src="uploads/downloaded-image.png" 
-             class="hero-video-bg w-full h-full object-cover" 
-             alt="Luxury Archive">
+        <img id="main-hero-img" src="uploads/downloaded-image.png" class="hero-video-bg w-full h-full object-cover" alt="Luxury Archive">
         <div class="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-white"></div>
         <div class="hero-overlay absolute bottom-[15%] left-1/2 -translate-x-1/2 text-center text-black w-full animate__animated animate__fadeInUp">
             <h2 class="text-5xl font-extralight tracking-[0.6em] mb-4 uppercase">Chanel Spirit 2026</h2>
@@ -261,48 +275,27 @@
             } catch (e) { alert("Server Error"); }
         }
 
-        // ✨ 视觉引擎同步功能
+        // ✨ 视觉引擎同步功能 (修复全量同步逻辑)
         async function applyLiveSettings() {
-    try {
-        const res = await fetch('/api/settings');
-        const config = await res.json();
-        console.log("前端收到的最新配置:", config); // 调试用，能在控制台看到状态
+            try {
+                const res = await fetch('/api/settings');
+                const config = await res.json();
+                console.log("视觉引擎同步中...", config);
 
-        // 1. 同步顶部 Banner (原本就有)
-        if (config.hero_banner) {
-            const heroImg = document.getElementById('main-hero-img');
-            if (heroImg) heroImg.src = config.hero_banner;
-        }
+                // 1. 同步顶部 Banner
+                if (config.hero_banner) {
+                    const heroImg = document.getElementById('main-hero-img');
+                    if (heroImg) heroImg.src = config.hero_banner;
+                }
 
-        // 2. 核心补全：处理“全站置顶公告栏”按钮 [#02 模块]
-        // 假设你的公告栏 ID 是 'top-notice-bar'
-        const noticeBar = document.getElementById('top-notice-bar');
-        if (noticeBar) {
-            // 如果后台开关是 "true"，则显示；否则隐藏
-            noticeBar.style.display = (config.show_notice === "true") ? "block" : "none";
-            noticeBar.innerText = config.notice_content || "";
-        }
+                // 2. 处理置顶公告 [#02 模块]
+                const noticeBar = document.getElementById('top-notice-bar');
+                if (noticeBar) {
+                    noticeBar.style.display = (config.show_notice === "true") ? "block" : "none";
+                    noticeBar.innerText = config.notice_content || "";
+                }
 
-        // 3. 核心补全：处理“底部展示图文” [#05 模块]
-        if (config.footer_title) {
-            const fTitle = document.getElementById('display-footer-title');
-            if (fTitle) fTitle.innerText = config.footer_title;
-        }
-        if (config.footer_desc) {
-            const fDesc = document.getElementById('display-footer-desc');
-            if (fDesc) fDesc.innerText = config.footer_desc;
-        }
-        if (config.footer_img) {
-            const fImg = document.getElementById('display-footer-img');
-            if (fImg) fImg.src = config.footer_img;
-        }
-
-    } catch (err) {
-        console.error("首页视觉配置同步失败:", err);
-    }
-}
-
-                // 2. 同步底部图文
+                // 3. 同步底部展示图文 [#05 模块]
                 if (config.footer_title) {
                     const fTitle = document.getElementById('display-footer-title');
                     if (fTitle) fTitle.innerText = config.footer_title;
@@ -315,6 +308,7 @@
                     const fImg = document.getElementById('display-footer-img');
                     if (fImg) fImg.src = config.footer_img;
                 }
+
             } catch (err) {
                 console.error("视觉配置同步失败:", err);
             }
@@ -328,5 +322,3 @@
     </script>
 </body>
 </html>
-
-
