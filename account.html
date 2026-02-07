@@ -10,7 +10,7 @@
         
         body { font-family: 'Inter', sans-serif; background: #fff; color: #000; overflow-x: hidden; }
         
-        /* 18px Montserrat 侧边栏样式 */
+        /* 18px Montserrat 侧边栏样式 - 保持不变 */
         .nav-link-sub {
             font-family: 'Montserrat', sans-serif;
             font-size: 18px;
@@ -25,7 +25,7 @@
         }
         .nav-link-sub:hover, .nav-link-sub.active { color: #000; transform: translateX(10px); }
 
-        /* 32px 大圆角卡片 */
+        /* 32px 大圆角卡片 - 保持不变 */
         .order-card {
             background: #fcfcfc;
             border-radius: 2rem;
@@ -35,7 +35,7 @@
         }
         .order-card:hover { border-color: #000; transform: translateY(-5px); }
 
-        /* 头像组件 */
+        /* 头像组件 - 保持不变 */
         .avatar-box {
             width: 100px; height: 100px;
             border-radius: 50%;
@@ -71,6 +71,7 @@
                 </div>
                 <h2 id="user-name" class="text-4xl font-light tracking-tighter mt-8 mb-2">Member</h2>
                 <p id="user-email" class="text-[10px] text-zinc-400 tracking-[0.3em] uppercase">Verified Account</p>
+                <p id="user-balance" class="text-[10px] text-black font-bold tracking-[0.2em] mt-4 uppercase">Balance: ¥0.00</p>
             </div>
 
             <nav>
@@ -90,40 +91,123 @@
     </div>
 
     <script>
-        // 核心逻辑
+        // --- 核心逻辑增强 ---
+        
+        // 从本地存储获取初始登录状态
         let user = JSON.parse(localStorage.getItem('mws_user'));
 
-        function init() {
+        async function init() {
             if (!user) {
+                // 如果没登录，直接踢回首页
                 location.href = 'index.html';
                 return;
             }
-            document.getElementById('user-name').innerText = user.nickname || 'Member';
-            document.getElementById('user-email').innerText = user.email;
-            if(user.avatar) document.getElementById('user-avatar').src = user.avatar;
+            
+            // 1. 立即渲染本地已有的缓存数据，让用户感觉加载很快
+            renderUser(user);
+            
+            // 2. 异步从服务器同步最新资料（如最新的头像 URL、最新的余额）
+            await syncUserData();
         }
 
+        // 渲染用户信息到界面
+        function renderUser(data) {
+            if(data.nickname) document.getElementById('user-name').innerText = data.nickname;
+            if(data.email) document.getElementById('user-email').innerText = data.email;
+            if(data.avatar) document.getElementById('user-avatar').src = data.avatar;
+            if(data.balance !== undefined) {
+                document.getElementById('user-balance').innerText = `Balance: ¥${parseFloat(data.balance).toFixed(2)}`;
+            }
+        }
+
+        // 从服务器抓取最新 Profile
+        async function syncUserData() {
+            try {
+                // 使用 email 作为查询凭证
+                const res = await fetch(`/api/user/profile?email=${encodeURIComponent(user.email)}`);
+                const latestData = await res.json();
+                
+                if (latestData.success) {
+                    // 合并数据并更新本地缓存
+                    user = { ...user, ...latestData.user };
+                    localStorage.setItem('mws_user', JSON.stringify(user));
+                    // 重新渲染最新数据
+                    renderUser(user);
+                }
+            } catch (err) {
+                console.warn("Profile Sync Offline: 无法连接到服务器进行数据同步");
+            }
+        }
+
+        // Cloudinary 头像上传逻辑
         function uploadAvatar() {
             cloudinary.openUploadWidget({
                 cloudName: "dbyud7vlz", 
                 uploadPreset: "aliang",
                 cropping: true,
                 croppingAspectRatio: 1,
-                multiple: false
-            }, (error, result) => {
+                showSkipCropButton: false,
+                multiple: false,
+                styles: {
+                    palette: {
+                        window: "#FFFFFF",
+                        sourceBg: "#F4F4F5",
+                        windowBorder: "#90A0B3",
+                        tabIcon: "#000000",
+                        inactiveTabIcon: "#69778A",
+                        menuIcons: "#000000",
+                        link: "#000000",
+                        action: "#000000",
+                        inProgress: "#000000",
+                        complete: "#20B832",
+                        error: "#E57373",
+                        textDark: "#000000",
+                        textLight: "#FFFFFF"
+                    }
+                }
+            }, async (error, result) => {
                 if (!error && result.event === "success") {
-                    const url = result.info.secure_url;
-                    document.getElementById('user-avatar').src = url;
-                    // 同步到数据库的逻辑...
+                    const newUrl = result.info.secure_url;
+                    
+                    // 1. 视觉反馈：立即更新页面上的图片
+                    document.getElementById('user-avatar').src = newUrl;
+                    
+                    // 2. 数据库持久化：调用 API 保存
+                    await saveAvatarToDB(newUrl);
                 }
             });
         }
 
+        // 将新头像 URL 永久存入 Supabase 数据库
+        async function saveAvatarToDB(url) {
+            try {
+                const res = await fetch('/api/user/update-avatar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: user.email, avatar: url })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    // 同步本地缓存中的 avatar 字段
+                    user.avatar = url;
+                    localStorage.setItem('mws_user', JSON.stringify(user));
+                    console.log("Database Sync Success");
+                } else {
+                    alert("头像保存失败: " + data.msg);
+                }
+            } catch (err) {
+                console.error("Save Avatar Error:", err);
+            }
+        }
+
         function logout() {
+            // 清除登录状态
             localStorage.removeItem('mws_user');
+            // 返回首页
             location.href = 'index.html';
         }
 
+        // 绑定初始化函数
         window.onload = init;
     </script>
 </body>
