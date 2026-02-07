@@ -134,6 +134,7 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
+
 // 2. 真实登录
 app.post('/api/login', async (req, res) => {
     const { email, pass } = req.body;
@@ -153,10 +154,49 @@ app.post('/api/login', async (req, res) => {
 });
 
 // ==========================================
+// 👤 用户资料扩展 API (新增)
+// ==========================================
+
+// 1. 获取用户最新资料 (用于 account.html 实时同步)
+app.get('/api/user/profile', async (req, res) => {
+    const { email } = req.query;
+    try {
+        const result = await pool.query(
+            "SELECT nickname, email, avatar, balance, role FROM users WHERE email = $1", 
+            [email]
+        );
+        if (result.rows.length > 0) {
+            res.json({ success: true, user: result.rows[0] });
+        } else {
+            res.json({ success: false, msg: "用户不存在" });
+        }
+    } catch (err) {
+        console.error("获取资料失败:", err.message);
+        res.status(500).json({ success: false });
+    }
+});
+
+// 2. 更新用户头像 (用于上传头像后永久保存)
+app.post('/api/user/update-avatar', async (req, res) => {
+    const { email, avatar } = req.body;
+    try {
+        await pool.query(
+            "UPDATE users SET avatar = $1 WHERE email = $2",
+            [avatar, email]
+        );
+        res.json({ success: true, msg: "头像已同步至云端" });
+    } catch (err) {
+        console.error("更新头像失败:", err.message);
+        res.status(500).json({ success: false, msg: "保存失败" });
+    }
+});
+
+// ==========================================
 // 🚀 启动监听
 // ==========================================
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
     console.log(`🚀 M.W.S 系统在线 (认证增强版) | 端口: ${PORT}`);
 });
+
 
