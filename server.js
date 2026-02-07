@@ -8,9 +8,22 @@ const app = express();
 // 🔗 数据库连接 (针对 Render 网络环境极致优化)
 // ==========================================
 const pool = new Pool({
-    // 强制使用 sslmode 并确保密码转义
-    connectionString: "postgresql://postgres:Chenliang123%3Dxia@db.kzjtjgdytnptcqgqfhcw.supabase.co:5432/postgres?sslmode=require",
-    ssl: { rejectUnauthorized: false },
+    // 1. 拆分连接参数，以便强制指定 family: 4 (IPv4)
+    user: 'postgres',
+    host: 'db.kzjtjgdytnptcqgqfhcw.supabase.co',
+    database: 'postgres',
+    password: 'Chenliang123=xia', // 这里注意：代码里会自动处理，不需要转义
+    port: 5432,
+    
+    // 2. 核心修复：强制使用 IPv4
+    family: 4, 
+    
+    // 3. SSL 配置
+    ssl: { 
+        rejectUnauthorized: false 
+    },
+    
+    // 4. 超时处理
     connectionTimeoutMillis: 10000,
     idleTimeoutMillis: 30000
 });
@@ -109,3 +122,4 @@ const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
     console.log(`🚀 M.W.S 系统在线 | 端口: ${PORT}`);
 });
+
