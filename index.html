@@ -263,18 +263,44 @@
 
         // ✨ 视觉引擎同步功能
         async function applyLiveSettings() {
-            try {
-                const res = await fetch('/api/settings');
-                const config = await res.json();
+    try {
+        const res = await fetch('/api/settings');
+        const config = await res.json();
+        console.log("前端收到的最新配置:", config); // 调试用，能在控制台看到状态
 
-                // 1. 同步顶部 Banner
-                if (config && config.hero_banner) {
-                    const heroImg = document.getElementById('main-hero-img');
-                    if (heroImg) {
-                        heroImg.src = config.hero_banner;
-                        heroImg.style.opacity = "1";
-                    }
-                }
+        // 1. 同步顶部 Banner (原本就有)
+        if (config.hero_banner) {
+            const heroImg = document.getElementById('main-hero-img');
+            if (heroImg) heroImg.src = config.hero_banner;
+        }
+
+        // 2. 核心补全：处理“全站置顶公告栏”按钮 [#02 模块]
+        // 假设你的公告栏 ID 是 'top-notice-bar'
+        const noticeBar = document.getElementById('top-notice-bar');
+        if (noticeBar) {
+            // 如果后台开关是 "true"，则显示；否则隐藏
+            noticeBar.style.display = (config.show_notice === "true") ? "block" : "none";
+            noticeBar.innerText = config.notice_content || "";
+        }
+
+        // 3. 核心补全：处理“底部展示图文” [#05 模块]
+        if (config.footer_title) {
+            const fTitle = document.getElementById('display-footer-title');
+            if (fTitle) fTitle.innerText = config.footer_title;
+        }
+        if (config.footer_desc) {
+            const fDesc = document.getElementById('display-footer-desc');
+            if (fDesc) fDesc.innerText = config.footer_desc;
+        }
+        if (config.footer_img) {
+            const fImg = document.getElementById('display-footer-img');
+            if (fImg) fImg.src = config.footer_img;
+        }
+
+    } catch (err) {
+        console.error("首页视觉配置同步失败:", err);
+    }
+}
 
                 // 2. 同步底部图文
                 if (config.footer_title) {
@@ -302,3 +328,4 @@
     </script>
 </body>
 </html>
+
