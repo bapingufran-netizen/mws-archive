@@ -6,7 +6,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;700&display=swap');
+        /* 引入高级衬线字体用于导航美化 */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;700&family=Playfair+Display:ital,wght@0,400;1,700&display=swap');
+        
         body { font-family: 'Inter', sans-serif; background: #fff; overflow-x: hidden; }
         ::-webkit-scrollbar { width: 0px; } 
 
@@ -17,7 +19,6 @@
             border-bottom: 0.5px solid #f0f0f0;
         }
 
-        /* 顶部公告条样式 */
         #top-notice-bar {
             width: 100%;
             background: #000;
@@ -28,19 +29,28 @@
             letter-spacing: 0.2em;
             text-transform: uppercase;
             font-weight: bold;
-            display: none; /* 默认隐藏，由后台开关控制 */
+            display: none; 
         }
 
         .side-nav {
             position: fixed; left: 40px; top: 160px; z-index: 90; width: 220px;
             height: calc(100vh - 200px); overflow-y: auto; padding-bottom: 50px;
         }
+
+        /* ✨ 针对你的要求进行导航栏字体美化与加大 */
         .nav-link {
-            font-size: 11px; font-weight: 700; letter-spacing: 0.25em; text-transform: uppercase;
-            color: #ccc; margin-bottom: 24px; cursor: pointer; display: block;
-            transition: 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            font-family: 'Playfair Display', 'Inter', serif; /* 增加美感 */
+            font-size: 15px; /* 字号加大 */
+            font-weight: 400; 
+            letter-spacing: 0.15em; /* 优化字间距 */
+            text-transform: uppercase;
+            color: #bbb; 
+            margin-bottom: 32px; /* 增加行距，更显精简高级 */
+            cursor: pointer; 
+            display: block;
+            transition: 0.6s cubic-bezier(0.19, 1, 0.22, 1);
         }
-        .nav-link:hover, .nav-link.active { color: #000; transform: translateX(8px); }
+        .nav-link:hover, .nav-link.active { color: #000; transform: translateX(10px); }
 
         .hero-banner { height: 85vh; width: 100%; position: relative; margin-top: 120px; overflow: hidden; background: #000; }
         .hero-video-bg { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; transition: transform 1.5s ease; }
@@ -124,23 +134,15 @@
     </section>
 
     <aside class="side-nav hidden lg:block animate__animated animate__fadeInLeft custom-scroll">
-        <div class="text-[9px] text-gray-300 mb-10 tracking-widest uppercase font-bold">Collections / 划分</div>
+        <div class="text-[9px] text-gray-300 mb-12 tracking-widest uppercase font-bold">Collections / 核心序列</div>
         <div id="category-menu">
-            <span class="nav-link active" onclick="filterCate('ALL')">全部 / ALL</span>
+            <span class="nav-link active" onclick="filterCate('ALL')">全部 / ALL ARCHIVE</span>
             <span class="nav-link" onclick="filterCate('Silk Series')">真丝系列 / SILK SERIES</span>
+            <span class="nav-link" onclick="filterCate('Cashmere')">羊绒系列 / CASHMERE</span>
             <span class="nav-link" onclick="filterCate('Atelier')">重磅成衣 / ATELIER</span>
-            <span class="nav-link" onclick="filterCate('Archive')">品牌档案 / ARCHIVE</span>
-            <span class="nav-link" onclick="filterCate('Knitwear')">针织系列 / KNITWEAR</span>
-            <span class="nav-link" onclick="filterCate('Outerwear')">外套系列 / OUTERWEAR</span>
-            <span class="nav-link" onclick="filterCate('Trousers')">裤装系列 / TROUSERS</span>
             <span class="nav-link" onclick="filterCate('Accessories')">配饰系列 / ACCESSORIES</span>
-            <span class="nav-link" onclick="filterCate('Leather')">皮革系列 / LEATHER</span>
             <span class="nav-link" onclick="filterCate('Bespoke')">私人定制 / BESPOKE</span>
-            <span class="nav-link" onclick="filterCate('Limited')">限量序列 / LIMITED</span>
-            <span class="nav-link" onclick="filterCate('Footwear')">鞋履系列 / FOOTWEAR</span>
-            <span class="nav-link" onclick="filterCate('Object')">器物系列 / OBJECT</span>
-            <span class="nav-link" onclick="filterCate('Fragrance')">气味档案 / FRAGRANCE</span>
-            <span class="nav-link" onclick="filterCate('Exhibition')">展览系列 / EXHIBITION</span>
+            <span class="nav-link" onclick="filterCate('Archive')">品牌档案 / BRAND STORY</span>
         </div>
     </aside>
 
@@ -203,8 +205,8 @@
                     <div class="space-y-4">
                         <h4 class="text-[11px] uppercase tracking-[0.4em] font-bold text-zinc-400">${item.category}</h4>
                         <div class="flex justify-between items-baseline">
-                           <h2 class="text-[13px] uppercase tracking-[0.1em] font-medium">${item.name}</h2>
-                           <p class="text-[12px] font-bold">¥ ${item.price}</p>
+                            <h2 class="text-[13px] uppercase tracking-[0.1em] font-medium">${item.name}</h2>
+                            <p class="text-[12px] font-bold">¥ ${item.price}</p>
                         </div>
                     </div>
                 </a>
@@ -275,27 +277,19 @@
             } catch (e) { alert("Server Error"); }
         }
 
-        // ✨ 视觉引擎同步功能 (修复全量同步逻辑)
         async function applyLiveSettings() {
             try {
                 const res = await fetch('/api/settings');
                 const config = await res.json();
-                console.log("视觉引擎同步中...", config);
-
-                // 1. 同步顶部 Banner
                 if (config.hero_banner) {
                     const heroImg = document.getElementById('main-hero-img');
                     if (heroImg) heroImg.src = config.hero_banner;
                 }
-
-                // 2. 处理置顶公告 [#02 模块]
                 const noticeBar = document.getElementById('top-notice-bar');
                 if (noticeBar) {
                     noticeBar.style.display = (config.show_notice === "true") ? "block" : "none";
                     noticeBar.innerText = config.notice_content || "";
                 }
-
-                // 3. 同步底部展示图文 [#05 模块]
                 if (config.footer_title) {
                     const fTitle = document.getElementById('display-footer-title');
                     if (fTitle) fTitle.innerText = config.footer_title;
@@ -308,10 +302,7 @@
                     const fImg = document.getElementById('display-footer-img');
                     if (fImg) fImg.src = config.footer_img;
                 }
-
-            } catch (err) {
-                console.error("视觉配置同步失败:", err);
-            }
+            } catch (err) { console.error("视觉配置同步失败:", err); }
         }
 
         window.onload = () => { 
