@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>MWS | My Archive 个人中心</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Inter:wght@300;400;600&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; background: #fff; color: #000; overflow-x: hidden; }
+        
+        /* 18px Montserrat 侧边栏样式 */
+        .nav-link-sub {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 18px;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #d1d1d1;
+            margin-bottom: 35px;
+            cursor: pointer;
+            display: block;
+            transition: 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+        .nav-link-sub:hover, .nav-link-sub.active { color: #000; transform: translateX(10px); }
+
+        /* 32px 大圆角卡片 */
+        .order-card {
+            background: #fcfcfc;
+            border-radius: 2rem;
+            padding: 2.5rem;
+            border: 1px solid #f0f0f0;
+            transition: 0.5s;
+        }
+        .order-card:hover { border-color: #000; transform: translateY(-5px); }
+
+        /* 头像组件 */
+        .avatar-box {
+            width: 100px; height: 100px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: #f5f5f5;
+            position: relative;
+            cursor: pointer;
+            border: 1px solid #eee;
+        }
+        .avatar-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.4);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: 0.3s;
+        }
+        .avatar-box:hover .avatar-overlay { opacity: 1; }
+    </style>
+</head>
+<body class="p-8 lg:p-20">
+
+    <header class="flex justify-between items-center mb-24">
+        <h1 class="text-xl font-bold tracking-[0.5em] uppercase cursor-pointer" onclick="location.href='index.html'">MR WANG SILK</h1>
+        <button onclick="logout()" class="text-[10px] font-bold tracking-widest uppercase opacity-40 hover:opacity-100 transition">Logout</button>
+    </header>
+
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-24">
+        <aside class="lg:col-span-4">
+            <div class="mb-20">
+                <div class="avatar-box" onclick="uploadAvatar()">
+                    <img id="user-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=MWS" class="w-full h-full object-cover">
+                    <div class="avatar-overlay">
+                        <span class="text-[8px] text-white font-black tracking-widest uppercase">Change</span>
+                    </div>
+                </div>
+                <h2 id="user-name" class="text-4xl font-light tracking-tighter mt-8 mb-2">Member</h2>
+                <p id="user-email" class="text-[10px] text-zinc-400 tracking-[0.3em] uppercase">Verified Account</p>
+            </div>
+
+            <nav>
+                <div class="nav-link-sub active">My Orders / 我的订单</div>
+                <div class="nav-link-sub">Address / 地址管理</div>
+                <div class="nav-link-sub">Support / 售后服务</div>
+            </nav>
+        </aside>
+
+        <main class="lg:col-span-8">
+            <div id="order-list" class="space-y-8">
+                <div class="order-card">
+                    <p class="text-xs text-zinc-300 uppercase tracking-widest italic">No orders yet.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 核心逻辑
+        let user = JSON.parse(localStorage.getItem('mws_user'));
+
+        function init() {
+            if (!user) {
+                location.href = 'index.html';
+                return;
+            }
+            document.getElementById('user-name').innerText = user.nickname || 'Member';
+            document.getElementById('user-email').innerText = user.email;
+            if(user.avatar) document.getElementById('user-avatar').src = user.avatar;
+        }
+
+        function uploadAvatar() {
+            cloudinary.openUploadWidget({
+                cloudName: "dbyud7vlz", 
+                uploadPreset: "aliang",
+                cropping: true,
+                croppingAspectRatio: 1,
+                multiple: false
+            }, (error, result) => {
+                if (!error && result.event === "success") {
+                    const url = result.info.secure_url;
+                    document.getElementById('user-avatar').src = url;
+                    // 同步到数据库的逻辑...
+                }
+            });
+        }
+
+        function logout() {
+            localStorage.removeItem('mws_user');
+            location.href = 'index.html';
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
