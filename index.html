@@ -57,8 +57,10 @@
         .story-text { font-weight: 200; line-height: 2.2; letter-spacing: 0.15em; color: #333; text-align: left; }
         .story-image { width: 100%; height: auto; object-fit: cover; border-radius: 2px; }
 
-        #auth-modal { backdrop-filter: blur(20px); background: rgba(255,255,255,0.7); display: none; }
-        .auth-input { background: #f9f9f9; border-bottom: 1px solid #eee; transition: 0.3s; }
+        /* ✨ 增强后的 Auth 模块样式：仅针对此需求添加 */
+        #auth-modal { backdrop-filter: blur(25px); background: rgba(255,255,255,0.6); display: none; }
+        .auth-input { background: #fcfcfc; border-radius: 12px; border: 1px solid #f0f0f0; transition: 0.3s; }
+        .auth-input:focus { border-color: #000; background: #fff; }
         
         .custom-scroll::-webkit-scrollbar { width: 2px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #eee; border-radius: 10px; }
@@ -79,31 +81,52 @@
     </header>
 
     <div id="auth-modal" class="fixed inset-0 z-[200] flex items-center justify-center p-6">
-        <div class="bg-white w-full max-w-[380px] p-12 rounded-[2rem] shadow-2xl relative animate__animated animate__zoomIn">
-            <button onclick="closeAuth()" class="absolute top-8 right-8 text-zinc-300 hover:text-black transition">✕</button>
+        <div class="bg-white w-full max-w-[460px] p-16 rounded-[2.5rem] shadow-2xl relative animate__animated animate__fadeInUp">
+            <button onclick="closeAuth()" class="absolute top-10 right-10 text-zinc-300 hover:text-black transition text-lg">✕</button>
             
             <div id="login-form">
-                <h3 class="text-xs font-bold tracking-[0.3em] uppercase mb-10 text-center">Member Login</h3>
-                <div class="space-y-6">
-                    <input type="email" id="l-email" placeholder="EMAIL" class="auth-input w-full p-4 text-[10px] tracking-widest outline-none">
-                    <input type="password" id="l-pass" placeholder="PASSWORD" class="auth-input w-full p-4 text-[10px] tracking-widest outline-none">
-                    <button onclick="handleLogin()" class="w-full bg-black text-white py-4 text-[10px] font-bold uppercase tracking-[0.3em] rounded-xl active:scale-95 transition-all">Sign In</button>
+                <div class="mb-12 text-center">
+                    <h3 class="text-xl font-medium tracking-tighter mb-2">会员登录</h3>
+                    <p class="text-[9px] font-bold tracking-[0.3em] uppercase text-zinc-300">Member Login</p>
                 </div>
-                <p class="mt-8 text-center text-[9px] tracking-widest text-zinc-400">
-                    NEW TO MWS? <span onclick="toggleAuth('reg')" class="text-black cursor-pointer font-bold underline">CREATE ACCOUNT</span>
+                <div class="space-y-5">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-bold tracking-widest ml-1 text-zinc-400 uppercase">Email / 邮箱</label>
+                        <input type="email" id="l-email" placeholder="输入您的邮箱地址" class="auth-input w-full p-5 text-xs tracking-wide outline-none">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-bold tracking-widest ml-1 text-zinc-400 uppercase">Password / 密码</label>
+                        <input type="password" id="l-pass" placeholder="输入您的密码" class="auth-input w-full p-5 text-xs tracking-wide outline-none">
+                    </div>
+                    <button onclick="handleLogin()" class="w-full bg-black text-white py-5 text-[11px] font-bold uppercase tracking-[0.4em] rounded-2xl active:scale-95 transition-all mt-4">立即登录 / Sign In</button>
+                </div>
+                <p class="mt-10 text-center text-[10px] tracking-widest text-zinc-400">
+                    新会员？ <span onclick="toggleAuth('reg')" class="text-black cursor-pointer font-bold underline underline-offset-4 ml-2">建立账户 CREATE ACCOUNT</span>
                 </p>
             </div>
 
             <div id="register-form" class="hidden">
-                <h3 class="text-xs font-bold tracking-[0.3em] uppercase mb-10 text-center">Join Archive</h3>
-                <div class="space-y-6">
-                    <input type="text" id="r-nick" placeholder="NICKNAME" class="auth-input w-full p-4 text-[10px] tracking-widest outline-none">
-                    <input type="email" id="r-email" placeholder="EMAIL" class="auth-input w-full p-4 text-[10px] tracking-widest outline-none">
-                    <input type="password" id="r-pass" placeholder="PASSWORD" class="auth-input w-full p-4 text-[10px] tracking-widest outline-none">
-                    <button onclick="handleRegister()" class="w-full bg-black text-white py-4 text-[10px] font-bold uppercase tracking-[0.3em] rounded-xl active:scale-95 transition-all">Register</button>
+                <div class="mb-12 text-center">
+                    <h3 class="text-xl font-medium tracking-tighter mb-2">加入陈列馆</h3>
+                    <p class="text-[9px] font-bold tracking-[0.3em] uppercase text-zinc-300">Join the Archive</p>
                 </div>
-                <p class="mt-8 text-center text-[9px] tracking-widest text-zinc-400">
-                    HAVE ACCOUNT? <span onclick="toggleAuth('login')" class="text-black cursor-pointer font-bold underline">BACK TO LOGIN</span>
+                <div class="space-y-5">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-bold tracking-widest ml-1 text-zinc-400 uppercase">Nickname / 昵称</label>
+                        <input type="text" id="r-nick" placeholder="如何称呼您？" class="auth-input w-full p-5 text-xs tracking-wide outline-none">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-bold tracking-widest ml-1 text-zinc-400 uppercase">Email / 邮箱</label>
+                        <input type="email" id="r-email" placeholder="用于接收订单通知" class="auth-input w-full p-5 text-xs tracking-wide outline-none">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-bold tracking-widest ml-1 text-zinc-400 uppercase">Password / 密码</label>
+                        <input type="password" id="r-pass" placeholder="请设置您的安全密码" class="auth-input w-full p-5 text-xs tracking-wide outline-none">
+                    </div>
+                    <button onclick="handleRegister()" class="w-full bg-black text-white py-5 text-[11px] font-bold uppercase tracking-[0.4em] rounded-2xl active:scale-95 transition-all mt-4">注册账户 / Register</button>
+                </div>
+                <p class="mt-10 text-center text-[10px] tracking-widest text-zinc-400">
+                    已有账户？ <span onclick="toggleAuth('login')" class="text-black cursor-pointer font-bold underline underline-offset-4 ml-2">返回登录 BACK TO LOGIN</span>
                 </p>
             </div>
         </div>
@@ -151,7 +174,6 @@
         let currentUser = JSON.parse(localStorage.getItem('mws_user')) || null;
         let allProducts = [];
 
-        // 修改点：处理顶部按钮的点击逻辑（登录或进入个人中心）
         function handleUserClick() {
             if (currentUser) {
                 window.location.href = 'account.html';
@@ -171,7 +193,6 @@
             }
         }
 
-        // 修改点：处理模态框内的表单切换
         function toggleAuth(mode) {
             const lForm = document.getElementById('login-form');
             const rForm = document.getElementById('register-form');
@@ -218,7 +239,6 @@
             renderGrid(filtered);
         }
 
-        // ✨ 视觉引擎逻辑：保持完整，确保与后台关联无损
         async function applyLiveSettings() {
             try {
                 const res = await fetch('/api/settings');
@@ -241,10 +261,10 @@
         function openAuth() { document.getElementById('auth-modal').style.display = 'flex'; }
         function closeAuth() { document.getElementById('auth-modal').style.display = 'none'; }
 
-        // 修改点：登录后增加重定向到个人中心的逻辑
         async function handleLogin() {
             const email = document.getElementById('l-email').value;
             const pass = document.getElementById('l-pass').value;
+            if(!email || !pass) return alert("请完整填写登录信息");
             try {
                 const res = await fetch('/api/login', {
                     method: 'POST',
@@ -258,15 +278,15 @@
                     checkAuth();
                     closeAuth();
                     window.location.href = 'account.html';
-                } else { alert("认证失败"); }
+                } else { alert("认证失败：账号或密码错误"); }
             } catch (err) { console.error("Login Error"); }
         }
 
-        // 修改点：增加处理注册请求的接口调用
         async function handleRegister() {
             const nickname = document.getElementById('r-nick').value;
             const email = document.getElementById('r-email').value;
             const pass = document.getElementById('r-pass').value;
+            if(!nickname || !email || !pass) return alert("请完整填写注册信息");
             try {
                 const res = await fetch('/api/register', {
                     method: 'POST',
@@ -275,9 +295,9 @@
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert("注册成功，请登录");
+                    alert("注册成功！欢迎加入 MR WANG SILK");
                     toggleAuth('login');
-                } else { alert("注册失败，请检查填写内容"); }
+                } else { alert("注册失败：该邮箱可能已被占用"); }
             } catch (err) { console.error("Reg Error"); }
         }
 
