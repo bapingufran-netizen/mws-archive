@@ -191,6 +191,21 @@ app.post('/api/user/update-avatar', async (req, res) => {
     }
 });
 
+// --- 新增：接收客服留言接口 ---
+app.post('/api/messages/send', async (req, res) => {
+    const { email, content } = req.body;
+    try {
+        await pool.query(
+            "INSERT INTO messages (user_email, content) VALUES ($1, $2)",
+            [email, content]
+        );
+        res.json({ success: true, msg: "您的留言已存档至 MWS Archive。" });
+    } catch (err) {
+        console.error("留言保存失败:", err.message);
+        res.status(500).json({ success: false, msg: "发送失败，请稍后重试。" });
+    }
+});
+
 // ==========================================
 // 🚀 启动监听
 // ==========================================
@@ -198,5 +213,6 @@ const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
     console.log(`🚀 M.W.S 系统在线 (认证增强版) | 端口: ${PORT}`);
 });
+
 
 
