@@ -1,12 +1,19 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg'); // 替换 sqlite3
 const bodyParser = require('body-parser');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const db = new sqlite3.Database('./date.db');
+
+// ==========================================
+// 🔗 Supabase PostgreSQL 连接配置
+// ==========================================
+const pool = new Pool({
+    connectionString: "postgresql://postgres:[Chenliang123=xia]@db.kzjtjgdytnptcqgqfhcw.supabase.co:5432/postgres",
+    ssl: { rejectUnauthorized: false } // Supabase 连接必须开启 SSL
+});
 
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(express.static(__dirname));
@@ -16,7 +23,7 @@ if (!fs.existsSync('uploads')) fs.mkdirSync('uploads');
 const upload = multer({ dest: 'uploads/' });
 
 // ==========================================
-// ✨ 管理员校验逻辑
+// ✨ 管理员校验逻辑 (保持原样)
 // ==========================================
 const MWS_ADMIN_KEY = "MWS2026"; 
 
@@ -28,110 +35,138 @@ const adminGuard = (req, res, next) => {
     }
 };
 
-// --- 1. 数据库初始化 ---
-db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS products (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, price REAL, image TEXT, category TEXT, description TEXT, size_info TEXT, colors TEXT, detail_images TEXT, skus TEXT)`);
-    db.run(`CREATE TABLE IF NOT EXISTS orders (id INTEGER PRIMARY KEY AUTOINCREMENT, product_id INTEGER, spec_key TEXT, sku_code TEXT, customer_name TEXT, phone TEXT, address TEXT, quantity INTEGER, payment_method TEXT, tracking_number TEXT DEFAULT '待上传', status TEXT DEFAULT '待支付', created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
-    db.run(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)`);
-    db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE, password TEXT, nickname TEXT, role TEXT DEFAULT 'user', created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
-    db.run(`CREATE TABLE IF NOT EXISTS media (id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT, tag TEXT, url TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
-    db.run(`CREATE TABLE IF NOT EXISTS journal (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, content TEXT, category TEXT, status TEXT DEFAULT '草稿', date TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
-    
-    // 数据中枢表
-    db.run(`CREATE TABLE IF NOT EXISTS orders_hub (id INTEGER PRIMARY KEY AUTOINCREMENT, order_no TEXT, customer_name TEXT, phone TEXT, address TEXT, product_name TEXT, spec_info TEXT, sku_code TEXT, total_amount REAL, pay_status TEXT DEFAULT '未支付', ship_status TEXT DEFAULT '待发货', logistics_no TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
-    db.run(`CREATE TABLE IF NOT EXISTS users_hub (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, nickname TEXT, age INTEGER, total_spent REAL DEFAULT 0, last_login DATETIME, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+// --- 1. 产品 API ---
 
-    db.all("PRAGMA table_info(orders)", (err, rows) => {
-        const cols = rows.map(r => r.name);
-        if (!cols.includes('payment_method')) db.run("ALTER TABLE orders ADD COLUMN payment_method TEXT");
-    });
-});
-
-// --- 2. 产品 API (含删除功能) ---
-
-app.get('/api/products', (req, res) => {
-    db.all("SELECT * FROM products ORDER BY id DESC", [], (err, rows) => res.json(rows || []));
-});
-
-app.post('/api/products', adminGuard, (req, res) => {
-    const { id, name, price, image, category, description, size_info, colors, detail_images, skus } = req.body;
-    const s = (data) => (typeof data === 'object' ? JSON.stringify(data) : data);
-    if (id) {
-        db.run(`UPDATE products SET name=?, price=?, image=?, category=?, description=?, size_info=?, colors=?, detail_images=?, skus=? WHERE id=?`, [name, price, image, category, description, size_info, s(colors), s(detail_images), s(skus), id], (err) => res.json({ success: !err, msg: "更新成功" }));
-    } else {
-        db.run(`INSERT INTO products (name, price, image, category, description, size_info, colors, detail_images, skus) VALUES (?,?,?,?,?,?,?,?,?)`, [name, price, image, category, description, size_info, s(colors), s(detail_images), s(skus)], function(err) {
-            res.json({ success: !err, id: this.lastID, msg: "发布成功" });
-        });
+app.get('/api/products', async (req, res) => {
+    try {
+        const result = await pool.query("SELECT * FROM products ORDER BY id DESC");
+        res.json(result.rows || []);
+    } catch (err) {
+        res.json([]);
     }
 });
 
-app.delete('/api/products/:id', adminGuard, (req, res) => {
-    const id = req.params.id;
-    db.run("DELETE FROM products WHERE id = ?", [id], function(err) {
-        if (err) return res.status(500).json({ success: false, message: "数据库删除失败" });
+app.post('/api/products', adminGuard, async (req, res) => {
+    const { id, name, price, image, category, description, size_info, colors, detail_images, skus } = req.body;
+    const s = (data) => (typeof data === 'object' ? JSON.stringify(data) : data);
+    
+    try {
+        if (id) {
+            await pool.query(
+                `UPDATE products SET name=$1, price=$2, image=$3, category=$4, description=$5, size_info=$6, colors=$7, detail_images=$8, skus=$9 WHERE id=$10`,
+                [name, price, image, category, description, size_info, s(colors), s(detail_images), s(skus), id]
+            );
+            res.json({ success: true, msg: "更新成功" });
+        } else {
+            const result = await pool.query(
+                `INSERT INTO products (name, price, image, category, description, size_info, colors, detail_images, skus) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
+                [name, price, image, category, description, size_info, s(colors), s(detail_images), s(skus)]
+            );
+            res.json({ success: true, id: result.rows[0].id, msg: "发布成功" });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, msg: "数据库操作失败" });
+    }
+});
+
+app.delete('/api/products/:id', adminGuard, async (req, res) => {
+    try {
+        await pool.query("DELETE FROM products WHERE id = $1", [req.params.id]);
         res.json({ success: true, message: "档案已成功移除" });
-    });
+    } catch (err) {
+        res.status(500).json({ success: false, message: "数据库删除失败" });
+    }
 });
 
-// --- 3. 配置管理 API (Settings) ---
+// --- 2. 配置管理 API (Settings) ---
 
-app.get('/api/settings', (req, res) => {
-    db.all("SELECT * FROM settings", [], (err, rows) => {
+app.get('/api/settings', async (req, res) => {
+    try {
+        const result = await pool.query("SELECT * FROM settings");
         const config = {};
-        if (rows) rows.forEach(row => config[row.key] = row.value);
+        result.rows.forEach(row => config[row.key] = row.value);
         res.json(config);
-    });
+    } catch (err) {
+        res.json({});
+    }
 });
 
-app.post('/api/settings', adminGuard, (req, res) => {
+app.post('/api/settings', adminGuard, async (req, res) => {
     const settings = req.body;
-    db.serialize(() => {
-        const stmt = db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)");
-        Object.keys(settings).forEach(key => {
-            if (settings[key] !== undefined) stmt.run(key, String(settings[key]));
-        });
-        stmt.finalize((err) => {
-            if (err) return res.status(500).json({ success: false });
-            res.json({ success: true, msg: "视觉引擎配置已同步" });
-        });
-    });
+    try {
+        for (const key of Object.keys(settings)) {
+            if (settings[key] !== undefined) {
+                // 使用 PostgreSQL 的 UPSERT 语法替换 INSERT OR REPLACE
+                await pool.query(
+                    `INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2`,
+                    [key, String(settings[key])]
+                );
+            }
+        }
+        res.json({ success: true, msg: "视觉引擎配置已同步" });
+    } catch (err) {
+        res.status(500).json({ success: false });
+    }
 });
 
-// --- 4. 订单与用户 API ---
+// --- 3. 订单与用户 API ---
 
-app.post('/api/buy', (req, res) => {
+app.post('/api/buy', async (req, res) => {
     const { productId, specKey, customerName, phone, address, quantity, paymentMethod } = req.body;
-    db.get("SELECT * FROM products WHERE id = ?", [productId], (err, product) => {
-        if (err || !product) return res.status(404).json({ success: false });
+    try {
+        const productResult = await pool.query("SELECT * FROM products WHERE id = $1", [productId]);
+        const product = productResult.rows[0];
+        
+        if (!product) return res.status(404).json({ success: false });
+        
         const skus = JSON.parse(product.skus || '{}');
-        const variant = skus[specKey];
-        db.run(`INSERT INTO orders (product_id, spec_key, sku_code, customer_name, phone, address, quantity, payment_method, status) VALUES (?,?,?,?,?,?,?,?, '待发货')`, [productId, specKey, variant.sku, customerName, phone, address, quantity || 1, paymentMethod || '未选择'], function(err) {
-            res.json({ success: !err, orderId: this.lastID });
-        });
-    });
-});
-
-// ✨ 修复后的登录接口：自动识别用户名或邮箱
-app.post('/api/login', (req, res) => {
-    const { username, password } = req.body; // 必须是 username，对接前端
-    db.get("SELECT * FROM users WHERE (email = ? OR nickname = ?) AND password = ?", 
-    [username, username, password], (err, user) => {
-        if (err || !user) return res.json({ success: false, message: "凭据错误" });
-        res.json({ success: true, user: { id: user.id, nickname: user.nickname, role: user.role } });
-    });
-});
-
-// 注册接口 (补全)
-app.post('/api/register', (req, res) => {
-    const { username, nickname, password } = req.body;
-    db.run("INSERT INTO users (email, nickname, password, role) VALUES (?, ?, ?, 'user')", [username, nickname, password], function(err) {
-        if (err) return res.json({ success: false, message: "注册失败：账号可能已存在" });
+        const variant = skus[specKey] || {};
+        
+        await pool.query(
+            `INSERT INTO orders (product_id, spec_key, sku_code, customer_name, phone, address, quantity, payment_method, status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8, '待发货')`,
+            [productId, specKey, variant.sku || '', customerName, phone, address, quantity || 1, paymentMethod || '未选择']
+        );
         res.json({ success: true });
-    });
+    } catch (err) {
+        res.status(500).json({ success: false, msg: err.message });
+    }
 });
 
-app.get('/api/users_hub', adminGuard, (req, res) => {
-    db.all("SELECT id, username, nickname, age, total_spent, created_at FROM users_hub", [], (err, rows) => res.json(rows));
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body; 
+    try {
+        const result = await pool.query(
+            "SELECT * FROM users WHERE (email = $1 OR nickname = $2) AND password = $3",
+            [username, username, password]
+        );
+        const user = result.rows[0];
+        if (!user) return res.json({ success: false, message: "凭据错误" });
+        res.json({ success: true, user: { id: user.id, nickname: user.nickname, role: user.role } });
+    } catch (err) {
+        res.json({ success: false, message: "登录异常" });
+    }
+});
+
+app.post('/api/register', async (req, res) => {
+    const { username, nickname, password } = req.body;
+    try {
+        await pool.query(
+            "INSERT INTO users (email, nickname, password, role) VALUES ($1, $2, $3, 'user')",
+            [username, nickname, password]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        res.json({ success: false, message: "注册失败：账号可能已存在" });
+    }
+});
+
+app.get('/api/users_hub', adminGuard, async (req, res) => {
+    try {
+        const result = await pool.query("SELECT id, username, nickname, age, total_spent, created_at FROM users_hub");
+        res.json(result.rows || []);
+    } catch (err) {
+        res.json([]);
+    }
 });
 
 // ==========================================
@@ -139,6 +174,5 @@ app.get('/api/users_hub', adminGuard, (req, res) => {
 // ==========================================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 M.W.S System Running on Port ${PORT}`);
+    console.log(`🚀 M.W.S System Running on Supabase - Port ${PORT}`);
 });
-
