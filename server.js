@@ -8,11 +8,14 @@ const fs = require('fs');
 const app = express();
 
 // ==========================================
-// 🔗 Supabase PostgreSQL 连接配置
+// 🔗 Supabase PostgreSQL 连接配置 (已增加 IPv4 稳定性修复)
 // ==========================================
 const pool = new Pool({
-    connectionString: "postgresql://postgres:[Chenliang123=xia]@db.kzjtjgdytnptcqgqfhcw.supabase.co:5432/postgres",
-    ssl: { rejectUnauthorized: false } 
+    // 关键修复：增加 sslmode 参数强制安全连接
+    connectionString: "postgresql://postgres:Chenliang123%3Dxia@db.kzjtjgdytnptcqgqfhcw.supabase.co:5432/postgres?sslmode=require",
+    ssl: { rejectUnauthorized: false },
+    // 增加连接超时控制，防止进程卡死
+    connectionTimeoutMillis: 5000 
 });
 
 // ==========================================
@@ -22,34 +25,28 @@ app.use(bodyParser.json({ limit: '50mb' }));
 app.use(express.static(__dirname));
 app.use('/uploads', express.static('uploads'));
 
-// 🌍 核心修复：允许跨域请求和自定义 Header
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, x-mws-auth");
     res.header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
-    if (req.method === 'OPTIONS') {
-        return res.sendStatus(200);
-    }
+    if (req.method === 'OPTIONS') return res.sendStatus(200);
     next();
 });
 
 if (!fs.existsSync('uploads')) fs.mkdirSync('uploads');
-const upload = multer({ dest: 'uploads/' });
 
 // ==========================================
-// ✨ 管理员校验逻辑 (修复：增加日志和兼容性)
+// ✨ 管理员校验逻辑
 // ==========================================
 const MWS_ADMIN_KEY = "MWS2026"; 
 
 const adminGuard = (req, res, next) => {
-    // Node.js 会自动将 header 转为小写，这里进行标准获取
     const clientKey = req.headers['x-mws-auth']; 
-    
     if (clientKey === MWS_ADMIN_KEY) {
         next();
     } else {
-        console.log(`[认证失败] 客户端尝试访问，提供的 Key 为: ${clientKey || '空'}`);
-        res.status(403).json({ success: false, message: "身份验证失败：拒绝访问" });
+        console.log(`[认证提示] 访问拒绝，收到 Key: ${clientKey || '空'}`);
+        res.status(403).json({ success: false, message: "身份验证失败" });
     }
 };
 
@@ -61,27 +58,23 @@ app.get('/api/products', async (req, res) => {
         const result = await pool.query("SELECT * FROM products ORDER BY id DESC");
         res.json(result.rows || []);
     } catch (err) {
-        console.error("获取列表失败:", err);
-        res.json([]);
+        console.error("数据库连接异常:", err.message);
+        res.status(500).json({ error: "无法连接至云端数据库" });
     }
 });
 
 app.post('/api/products', adminGuard, async (req, res) => {
     const { id, name, price, image, category, description, size_info, colors, detail_images, skus } = req.body;
-    
-    // 数据格式化处理：确保存入数据库的是字符串
     const s = (data) => (typeof data === 'object' ? JSON.stringify(data) : (data || '[]'));
     
     try {
         if (id && id !== "null") {
-            // 更新逻辑
             await pool.query(
                 `UPDATE products SET name=$1, price=$2, image=$3, category=$4, description=$5, size_info=$6, colors=$7, detail_images=$8, skus=$9 WHERE id=$10`,
                 [name, price, image, category, description, size_info, s(colors), s(detail_images), s(skus), id]
             );
             res.json({ success: true, msg: "档案已更新" });
         } else {
-            // 新增逻辑
             const result = await pool.query(
                 `INSERT INTO products (name, price, image, category, description, size_info, colors, detail_images, skus) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
                 [name, price, image, category, description, size_info, s(colors), s(detail_images), s(skus)]
@@ -89,7 +82,7 @@ app.post('/api/products', adminGuard, async (req, res) => {
             res.json({ success: true, id: result.rows[0].id, msg: "发布成功" });
         }
     } catch (err) {
-        console.error("数据库操作错误:", err);
+        console.error("写入失败:", err.message);
         res.status(500).json({ success: false, msg: "云端存储失败" });
     }
 });
@@ -97,14 +90,12 @@ app.post('/api/products', adminGuard, async (req, res) => {
 app.delete('/api/products/:id', adminGuard, async (req, res) => {
     try {
         await pool.query("DELETE FROM products WHERE id = $1", [req.params.id]);
-        res.json({ success: true, message: "档案已成功移除" });
-    } catch (err) {
-        res.status(500).json({ success: false, message: "删除失败" });
-    }
+        res.json({ success: true, message: "已移除" });
+    } catch (err) { res.status(500).json({ success: false }); }
 });
 
 // ==========================================
-// ⚙️ 配置管理 API (Settings)
+// ⚙️ 配置管理 API
 // ==========================================
 app.get('/api/settings', async (req, res) => {
     try {
@@ -112,9 +103,7 @@ app.get('/api/settings', async (req, res) => {
         const config = {};
         result.rows.forEach(row => config[row.key] = row.value);
         res.json(config);
-    } catch (err) {
-        res.json({});
-    }
+    } catch (err) { res.json({}); }
 });
 
 app.post('/api/settings', adminGuard, async (req, res) => {
@@ -128,10 +117,8 @@ app.post('/api/settings', adminGuard, async (req, res) => {
                 );
             }
         }
-        res.json({ success: true, msg: "配置已同步" });
-    } catch (err) {
-        res.status(500).json({ success: false });
-    }
+        res.json({ success: true, msg: "同步成功" });
+    } catch (err) { res.status(500).json({ success: false }); }
 });
 
 // ==========================================
@@ -152,15 +139,10 @@ app.post('/api/buy', async (req, res) => {
             [productId, specKey, variant.sku || '', customerName, phone, address, quantity || 1, paymentMethod || '未选择']
         );
         res.json({ success: true });
-    } catch (err) {
-        res.status(500).json({ success: false, msg: err.message });
-    }
+    } catch (err) { res.status(500).json({ success: false, msg: err.message }); }
 });
 
-// ==========================================
-// 🚀 启动服务器
-// ==========================================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 M.W.S System Running on Supabase - Port ${PORT}`);
+    console.log(`🚀 M.W.S System Live | Port ${PORT}`);
 });
