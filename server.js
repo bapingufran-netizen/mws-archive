@@ -5,25 +5,16 @@ const bodyParser = require('body-parser');
 const app = express();
 
 // ==========================================
-// 🔗 数据库连接 (针对 Render 网络环境极致优化)
+// 🔗 数据库连接 (已优化 IPv4 强制连接)
 // ==========================================
 const pool = new Pool({
-    // 1. 拆分连接参数，以便强制指定 family: 4 (IPv4)
     user: 'postgres',
     host: 'db.kzjtjgdytnptcqgqfhcw.supabase.co',
     database: 'postgres',
-    password: 'Chenliang123=xia', // 这里注意：代码里会自动处理，不需要转义
+    password: 'Chenliang123=xia',
     port: 5432,
-    
-    // 2. 核心修复：强制使用 IPv4
     family: 4, 
-    
-    // 3. SSL 配置
-    ssl: { 
-        rejectUnauthorized: false 
-    },
-    
-    // 4. 超时处理
+    ssl: { rejectUnauthorized: false },
     connectionTimeoutMillis: 10000,
     idleTimeoutMillis: 30000
 });
@@ -43,23 +34,10 @@ app.use((req, res, next) => {
 });
 
 // ==========================================
-// ✨ 管理员权限校验 (密钥：MWS2026)
+// 📦 核心业务 API (已移除所有权限拦截 adminGuard)
 // ==========================================
-const MWS_ADMIN_KEY = "MWS2026"; 
 
-const adminGuard = (req, res, next) => {
-    const clientKey = req.headers['x-mws-auth']; 
-    if (clientKey === MWS_ADMIN_KEY) {
-        next();
-    } else {
-        console.log(`[认证拦截] 收到 Key: ${clientKey || '空'}`);
-        res.status(403).json({ success: false, message: "权限验证失败" });
-    }
-};
-
-// ==========================================
-// 📦 核心业务 API
-// ==========================================
+// 获取产品列表
 app.get('/api/products', async (req, res) => {
     try {
         const result = await pool.query("SELECT * FROM products ORDER BY id DESC");
@@ -70,7 +48,8 @@ app.get('/api/products', async (req, res) => {
     }
 });
 
-app.post('/api/products', adminGuard, async (req, res) => {
+// 发布或更新产品
+app.post('/api/products', async (req, res) => {
     const { id, name, price, image, category, description, size_info, colors, detail_images, skus } = req.body;
     const s = (data) => (typeof data === 'object' ? JSON.stringify(data) : (data || '[]'));
     
@@ -94,12 +73,17 @@ app.post('/api/products', adminGuard, async (req, res) => {
     }
 });
 
-// 基础配置与删除逻辑保持极简
-app.delete('/api/products/:id', adminGuard, async (req, res) => {
-    try { await pool.query("DELETE FROM products WHERE id = $1", [req.params.id]); res.json({ success: true }); }
-    catch (err) { res.status(500).json({ success: false }); }
+// 删除产品
+app.delete('/api/products/:id', async (req, res) => {
+    try { 
+        await pool.query("DELETE FROM products WHERE id = $1", [req.params.id]); 
+        res.json({ success: true }); 
+    } catch (err) { 
+        res.status(500).json({ success: false }); 
+    }
 });
 
+// 获取配置
 app.get('/api/settings', async (req, res) => {
     try {
         const result = await pool.query("SELECT * FROM settings");
@@ -108,7 +92,8 @@ app.get('/api/settings', async (req, res) => {
     } catch (err) { res.json({}); }
 });
 
-app.post('/api/settings', adminGuard, async (req, res) => {
+// 保存配置
+app.post('/api/settings', async (req, res) => {
     const settings = req.body;
     try {
         for (const key of Object.keys(settings)) {
@@ -120,6 +105,5 @@ app.post('/api/settings', adminGuard, async (req, res) => {
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
-    console.log(`🚀 M.W.S 系统在线 | 端口: ${PORT}`);
+    console.log(`🚀 M.W.S 系统在线 (无验证模式) | 端口: ${PORT}`);
 });
-
