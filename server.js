@@ -65,7 +65,6 @@ app.post('/api/products', adminGuard, (req, res) => {
     }
 });
 
-// 🔥 [关键修改] 这里是实现 Studio 页面删除的核心
 app.delete('/api/products/:id', adminGuard, (req, res) => {
     const id = req.params.id;
     db.run("DELETE FROM products WHERE id = ?", [id], function(err) {
@@ -98,7 +97,7 @@ app.post('/api/settings', adminGuard, (req, res) => {
     });
 });
 
-// --- 4. 订单、用户及其他 ---
+// --- 4. 订单与用户 API ---
 
 app.post('/api/buy', (req, res) => {
     const { productId, specKey, customerName, phone, address, quantity, paymentMethod } = req.body;
@@ -112,11 +111,26 @@ app.post('/api/buy', (req, res) => {
     });
 });
 
+// ✨ 修复后的登录接口：自动识别用户名或邮箱
 app.post('/api/login', (req, res) => {
-    const { email, password } = req.body;
-    db.get("SELECT * FROM users WHERE (email = ? OR nickname = ?) AND password = ?", [email, email, password], (err, user) => {
-        if (err || !user) return res.json({ success: false });
-        res.json({ success: true, user: { id: user.id, nickname: user.nickname, role: user.role } });
+    const { username, password } = req.body; // 兼容前端发送的 username 字段
+    db.get("SELECT * FROM users WHERE (email = ? OR nickname = ?) AND password = ?", [username, username, password], (err, user) => {
+        if (err || !user) {
+            return res.json({ success: false, message: "凭据错误或用户不存在" });
+        }
+        res.json({ 
+            success: true, 
+            user: { id: user.id, nickname: user.nickname, role: user.role, email: user.email } 
+        });
+    });
+});
+
+// 注册接口 (补全)
+app.post('/api/register', (req, res) => {
+    const { username, nickname, password } = req.body;
+    db.run("INSERT INTO users (email, nickname, password, role) VALUES (?, ?, ?, 'user')", [username, nickname, password], function(err) {
+        if (err) return res.json({ success: false, message: "注册失败：账号可能已存在" });
+        res.json({ success: true });
     });
 });
 
@@ -124,34 +138,10 @@ app.get('/api/users_hub', adminGuard, (req, res) => {
     db.all("SELECT id, username, nickname, age, total_spent, created_at FROM users_hub", [], (err, rows) => res.json(rows));
 });
 
+// ==========================================
+// 🚀 启动服务器
+// ==========================================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`🚀 M.W.S System Running on Port ${PORT}`);
 });
-
-// 1. 新增底部图上传函数
-function openFooterUpload() {
-    cloudinary.openUploadWidget({
-        cloudName: cloudName, uploadPreset: uploadPreset, cropping: true
-    }, (error, result) => {
-        if (!error && result.event === "success") {
-            document.getElementById('footer-img-input').value = result.info.secure_url;
-        }
-    });
-}
-
-// 2. 更新原有的 saveAllConfigs 函数中的 payload 部分
-async function saveAllConfigs() {
-    // ... 前面的代码保持不变 ...
-    const payload = {
-        "hero_banner": document.getElementById('hero-url-input').value,
-        "hero_autoplay": document.getElementById('autoPlay').checked ? "on" : "off",
-        "show_notice": document.getElementById('showNotice').checked ? "true" : "false",
-        "notice_content": document.getElementById('noticeContent').value,
-        // ✨ 新增以下三行数据同步
-        "footer_title": document.getElementById('footer-title-input').value,
-        "footer_desc": document.getElementById('footer-desc-input').value,
-        "footer_img": document.getElementById('footer-img-input').value
-    };
-    // ... 后面的 fetch 调用保持不变 ...
-}
