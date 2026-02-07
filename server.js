@@ -1,29 +1,25 @@
 const express = require('express');
 const { Pool } = require('pg');
 const bodyParser = require('body-parser');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 
 const app = express();
 
 // ==========================================
-// 🔗 数据库连接 (针对 Render 网络连接深度优化)
+// 🔗 数据库连接 (针对 Render 网络环境极致优化)
 // ==========================================
 const pool = new Pool({
-    // 关键修复 1：在 URL 末尾增加 ?sslmode=require
-    // 关键修复 2：将密码中的 = 转义为 %3D 确保字符串解析正确
+    // 强制使用 sslmode 并确保密码转义
     connectionString: "postgresql://postgres:Chenliang123%3Dxia@db.kzjtjgdytnptcqgqfhcw.supabase.co:5432/postgres?sslmode=require",
     ssl: { rejectUnauthorized: false },
-    connectionTimeoutMillis: 10000 // 增加连接超时容忍
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000
 });
 
 // ==========================================
-// 🛠️ 中间件配置 (保持原样)
+// 🛠️ 跨域与中间件
 // ==========================================
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(express.static(__dirname));
-app.use('/uploads', express.static('uploads'));
 
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
@@ -33,10 +29,8 @@ app.use((req, res, next) => {
     next();
 });
 
-if (!fs.existsSync('uploads')) fs.mkdirSync('uploads');
-
 // ==========================================
-// ✨ 管理员鉴权 (保持 MWS2026 密钥不变)
+// ✨ 管理员权限校验 (密钥：MWS2026)
 // ==========================================
 const MWS_ADMIN_KEY = "MWS2026"; 
 
@@ -45,20 +39,20 @@ const adminGuard = (req, res, next) => {
     if (clientKey === MWS_ADMIN_KEY) {
         next();
     } else {
-        console.log(`[认证拦截] 收到口令: ${clientKey || '空'}`);
-        res.status(403).json({ success: false, message: "身份验证失败：权限不足" });
+        console.log(`[认证拦截] 收到 Key: ${clientKey || '空'}`);
+        res.status(403).json({ success: false, message: "权限验证失败" });
     }
 };
 
 // ==========================================
-// 📦 产品管理 API (结构完全保留)
+// 📦 核心业务 API
 // ==========================================
 app.get('/api/products', async (req, res) => {
     try {
         const result = await pool.query("SELECT * FROM products ORDER BY id DESC");
         res.json(result.rows || []);
     } catch (err) {
-        console.error("数据库连接失败:", err.message);
+        console.error("数据库读取异常:", err.message);
         res.json([]);
     }
 });
@@ -82,15 +76,36 @@ app.post('/api/products', adminGuard, async (req, res) => {
             res.json({ success: true, id: result.rows[0].id, msg: "发布成功" });
         }
     } catch (err) {
-        console.error("写入云端失败:", err.message);
-        res.status(500).json({ success: false, msg: "存入云端失败，请稍后再试" });
+        console.error("写入失败:", err.message);
+        res.status(500).json({ success: false, msg: "数据库存储失败" });
     }
 });
 
-// 其余配置逻辑 (DELETE, GET/POST settings, POST buy) 保持你之前的版本完全不变
-// ...
+// 基础配置与删除逻辑保持极简
+app.delete('/api/products/:id', adminGuard, async (req, res) => {
+    try { await pool.query("DELETE FROM products WHERE id = $1", [req.params.id]); res.json({ success: true }); }
+    catch (err) { res.status(500).json({ success: false }); }
+});
+
+app.get('/api/settings', async (req, res) => {
+    try {
+        const result = await pool.query("SELECT * FROM settings");
+        const config = {}; result.rows.forEach(row => config[row.key] = row.value);
+        res.json(config);
+    } catch (err) { res.json({}); }
+});
+
+app.post('/api/settings', adminGuard, async (req, res) => {
+    const settings = req.body;
+    try {
+        for (const key of Object.keys(settings)) {
+            await pool.query(`INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2`, [key, String(settings[key])]);
+        }
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ success: false }); }
+});
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
-    console.log(`🚀 M.W.S System Running | Port ${PORT}`);
+    console.log(`🚀 M.W.S 系统在线 | 端口: ${PORT}`);
 });
