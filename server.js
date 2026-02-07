@@ -1,6 +1,8 @@
 const express = require('express');
 const { Pool } = require('pg');
 const bodyParser = require('body-parser');
+// ✨ 增量添加：引入加密库用于真实注册安全
+const bcrypt = require('bcryptjs'); 
 
 const app = express();
 
@@ -48,21 +50,18 @@ app.post('/api/products', async (req, res) => {
     const { id, name, price, image, category, description, size_info, colors, detail_images, skus } = req.body;
     
     // 🛡️ 核心修复：处理数据库 REAL 类型不支持空字符串的问题
-    // 如果 price 为空字符串或非法字符，强制转换为数字 0
     const finalPrice = parseFloat(price) || 0;
 
     const s = (data) => (typeof data === 'object' ? JSON.stringify(data) : (data || '[]'));
     
     try {
         if (id && id !== "null") {
-            // 更新逻辑 (使用 finalPrice)
             await pool.query(
                 `UPDATE products SET name=$1, price=$2, image=$3, category=$4, description=$5, size_info=$6, colors=$7, detail_images=$8, skus=$9 WHERE id=$10`,
                 [name, finalPrice, image, category, description, size_info, s(colors), s(detail_images), s(skus), id]
             );
             res.json({ success: true, msg: "档案已更新" });
         } else {
-            // 插入逻辑 (使用 finalPrice)
             const result = await pool.query(
                 `INSERT INTO products (name, price, image, category, description, size_info, colors, detail_images, skus) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
                 [name, finalPrice, image, category, description, size_info, s(colors), s(detail_images), s(skus)]
@@ -71,7 +70,6 @@ app.post('/api/products', async (req, res) => {
         }
     } catch (err) {
         console.error("写入失败:", err.message);
-        // 返回更具体的错误信息方便调试
         res.status(500).json({ success: false, msg: "存储失败: " + err.message });
     }
 });
@@ -106,7 +104,52 @@ app.post('/api/settings', async (req, res) => {
     } catch (err) { res.status(500).json({ success: false }); }
 });
 
+// ==========================================
+// 👤 用户认证 API (新增加的功能，不影响上方逻辑)
+// ==========================================
+
+// 1. 真实注册
+app.post('/api/register', async (req, res) => {
+    const { nickname, email, pass } = req.body;
+    try {
+        // 检查重复
+        const check = await pool.query("SELECT id FROM users WHERE email = $1", [email]);
+        if (check.rows.length > 0) return res.json({ success: false, msg: "该邮箱已被占用" });
+
+        // 加密存储
+        const hashedPassword = await bcrypt.hash(pass, 10);
+        const result = await pool.query(
+            "INSERT INTO users (nickname, email, password) VALUES ($1, $2, $3) RETURNING id, nickname, email, role, avatar, balance",
+            [nickname, email, hashedPassword]
+        );
+        res.json({ success: true, user: result.rows[0] });
+    } catch (err) {
+        res.status(500).json({ success: false, msg: "注册异常" });
+    }
+});
+
+// 2. 真实登录
+app.post('/api/login', async (req, res) => {
+    const { email, pass } = req.body;
+    try {
+        const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+        const user = result.rows[0];
+        if (!user) return res.json({ success: false, msg: "账号不存在" });
+
+        const isMatch = await bcrypt.compare(pass, user.password);
+        if (!isMatch) return res.json({ success: false, msg: "密码错误" });
+
+        delete user.password;
+        res.json({ success: true, user: user });
+    } catch (err) {
+        res.status(500).json({ success: false, msg: "登录异常" });
+    }
+});
+
+// ==========================================
+// 🚀 启动监听
+// ==========================================
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
-    console.log(`🚀 M.W.S 系统在线 (无验证模式) | 端口: ${PORT}`);
+    console.log(`🚀 M.W.S 系统在线 (认证增强版) | 端口: ${PORT}`);
 });
