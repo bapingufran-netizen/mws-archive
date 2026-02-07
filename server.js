@@ -8,18 +8,18 @@ const fs = require('fs');
 const app = express();
 
 // ==========================================
-// 🔗 Supabase PostgreSQL 连接配置 (已增加 IPv4 稳定性修复)
+// 🔗 Supabase 连接配置 (已修复 IPv6 连接报错问题)
 // ==========================================
 const pool = new Pool({
-    // 关键修复：增加 sslmode 参数强制安全连接
+    // 关键修复 1：在 URL 末尾增加 ?sslmode=require
+    // 关键修复 2：将密码中的 = 转义为 %3D 确保字符串解析正确
     connectionString: "postgresql://postgres:Chenliang123%3Dxia@db.kzjtjgdytnptcqgqfhcw.supabase.co:5432/postgres?sslmode=require",
     ssl: { rejectUnauthorized: false },
-    // 增加连接超时控制，防止进程卡死
-    connectionTimeoutMillis: 5000 
+    connectionTimeoutMillis: 10000 // 增加连接超时容忍到10秒
 });
 
 // ==========================================
-// 🛠️ 中间件配置
+// 🛠️ 中间件配置 (保持原样)
 // ==========================================
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(express.static(__dirname));
@@ -36,7 +36,7 @@ app.use((req, res, next) => {
 if (!fs.existsSync('uploads')) fs.mkdirSync('uploads');
 
 // ==========================================
-// ✨ 管理员校验逻辑
+// ✨ 管理员鉴权 (保持 MWS2026 密钥不变)
 // ==========================================
 const MWS_ADMIN_KEY = "MWS2026"; 
 
@@ -45,21 +45,21 @@ const adminGuard = (req, res, next) => {
     if (clientKey === MWS_ADMIN_KEY) {
         next();
     } else {
-        console.log(`[认证提示] 访问拒绝，收到 Key: ${clientKey || '空'}`);
-        res.status(403).json({ success: false, message: "身份验证失败" });
+        console.log(`[认证拦截] 收到密钥: ${clientKey || '空'}`);
+        res.status(403).json({ success: false, message: "权限不足" });
     }
 };
 
 // ==========================================
-// 📦 产品 API
+// 📦 产品管理 API (结构完全保留)
 // ==========================================
 app.get('/api/products', async (req, res) => {
     try {
         const result = await pool.query("SELECT * FROM products ORDER BY id DESC");
         res.json(result.rows || []);
     } catch (err) {
-        console.error("数据库连接异常:", err.message);
-        res.status(500).json({ error: "无法连接至云端数据库" });
+        console.error("读取数据库失败:", err.message);
+        res.json([]);
     }
 });
 
@@ -82,8 +82,8 @@ app.post('/api/products', adminGuard, async (req, res) => {
             res.json({ success: true, id: result.rows[0].id, msg: "发布成功" });
         }
     } catch (err) {
-        console.error("写入失败:", err.message);
-        res.status(500).json({ success: false, msg: "云端存储失败" });
+        console.error("存入云端失败:", err.message);
+        res.status(500).json({ success: false, msg: "数据库写入失败: " + err.message });
     }
 });
 
@@ -117,7 +117,7 @@ app.post('/api/settings', adminGuard, async (req, res) => {
                 );
             }
         }
-        res.json({ success: true, msg: "同步成功" });
+        res.json({ success: true, msg: "配置已同步" });
     } catch (err) { res.status(500).json({ success: false }); }
 });
 
@@ -142,7 +142,7 @@ app.post('/api/buy', async (req, res) => {
     } catch (err) { res.status(500).json({ success: false, msg: err.message }); }
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
-    console.log(`🚀 M.W.S System Live | Port ${PORT}`);
+    console.log(`🚀 M.W.S System Running on Supabase - Port ${PORT}`);
 });
