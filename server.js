@@ -108,23 +108,29 @@ app.post('/api/settings', async (req, res) => {
 // 👤 用户认证 API (新增加的功能，不影响上方逻辑)
 // ==========================================
 
-// 1. 真实注册
+// 1. 真实注册接口 (优化版错误处理)
 app.post('/api/register', async (req, res) => {
     const { nickname, email, pass } = req.body;
     try {
-        // 检查重复
+        // 先检查邮箱是否真的存在
         const check = await pool.query("SELECT id FROM users WHERE email = $1", [email]);
-        if (check.rows.length > 0) return res.json({ success: false, msg: "该邮箱已被占用" });
+        if (check.rows.length > 0) {
+            return res.json({ success: false, msg: "该邮箱已被占用" });
+        }
 
-        // 加密存储
         const hashedPassword = await bcrypt.hash(pass, 10);
-        const result = await pool.query(
-            "INSERT INTO users (nickname, email, password) VALUES ($1, $2, $3) RETURNING id, nickname, email, role, avatar, balance",
+        
+        // 执行插入
+        await pool.query(
+            "INSERT INTO users (nickname, email, password) VALUES ($1, $2, $3)",
             [nickname, email, hashedPassword]
         );
-        res.json({ success: true, user: result.rows[0] });
+
+        res.json({ success: true, msg: "注册成功" });
     } catch (err) {
-        res.status(500).json({ success: false, msg: "注册异常" });
+        // 如果这里报错，说明是数据库结构或连接问题，不再误报“邮箱占用”
+        console.error("数据库插入真实报错:", err.message);
+        res.status(500).json({ success: false, msg: "系统繁忙: " + err.message });
     }
 });
 
@@ -153,3 +159,4 @@ const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
     console.log(`🚀 M.W.S 系统在线 (认证增强版) | 端口: ${PORT}`);
 });
+
