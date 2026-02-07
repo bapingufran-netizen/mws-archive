@@ -73,7 +73,7 @@
             <p class="text-[9px] tracking-[0.4em] text-gray-400 mt-2 uppercase">Privé Collection</p>
         </div>
         <div class="absolute right-12 top-1/2 -translate-y-1/2 flex items-center gap-6">
-            <button id="user-btn" onclick="openAuth()" class="text-[9px] border-b border-transparent pb-1 opacity-40 hover:opacity-100 transition uppercase tracking-widest font-bold">Login</button>
+            <button id="user-btn" onclick="handleUserClick()" class="text-[9px] border-b border-transparent pb-1 opacity-40 hover:opacity-100 transition uppercase tracking-widest font-bold">Login</button>
             <a href="studio.html" id="admin-link" class="hidden text-[9px] border-b border-black pb-1 opacity-40 hover:opacity-100 transition uppercase tracking-widest font-bold">Studio</a>
         </div>
     </header>
@@ -95,8 +95,6 @@
     <section class="hero-banner">
         <img id="main-hero-img" src="" class="hero-video-bg" alt="Luxury Archive">
         <div class="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-white/60"></div>
-        
-        </div>
     </section>
 
     <aside class="side-nav hidden lg:block animate__animated animate__fadeInLeft custom-scroll">
@@ -135,6 +133,15 @@
     <script>
         let currentUser = JSON.parse(localStorage.getItem('mws_user')) || null;
         let allProducts = [];
+
+        // 🌟 核心修改 1：点击判断逻辑
+        function handleUserClick() {
+            if (currentUser) {
+                window.location.href = 'account.html';
+            } else {
+                openAuth();
+            }
+        }
 
         function checkAuth() {
             const btn = document.getElementById('user-btn');
@@ -179,22 +186,14 @@
             renderGrid(filtered);
         }
 
-        // ✨ 视觉引擎：让后台设置重新关联
         async function applyLiveSettings() {
             try {
                 const res = await fetch('/api/settings');
                 const config = await res.json();
                 
-                // 1. 同步首屏 Banner
                 if (config.hero_banner) document.getElementById('main-hero-img').src = config.hero_banner;
-                
-                // 2. 同步底部标题
                 if (config.footer_title) document.getElementById('display-footer-title').innerText = config.footer_title;
-                
-                // 3. 同步底部描述
                 if (config.footer_desc) document.getElementById('display-footer-desc').innerText = config.footer_desc;
-                
-                // 4. 同步底部展示图 (解决你提到的不起作用的问题)
                 if (config.footer_img) {
                     const fImg = document.getElementById('display-footer-img');
                     if (fImg) fImg.src = config.footer_img;
@@ -211,8 +210,30 @@
         function openAuth() { document.getElementById('auth-modal').style.display = 'flex'; }
         function closeAuth() { document.getElementById('auth-modal').style.display = 'none'; }
 
+        // 🌟 核心修改 2：登录成功后自动导向个人中心
+        async function handleLogin() {
+            const email = document.getElementById('l-email').value;
+            const pass = document.getElementById('l-pass').value;
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, pass })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    localStorage.setItem('mws_user', JSON.stringify(data.user));
+                    currentUser = data.user;
+                    checkAuth();
+                    closeAuth();
+                    window.location.href = 'account.html';
+                } else {
+                    alert("认证失败");
+                }
+            } catch (err) { console.error("Login Error"); }
+        }
+
         window.onload = () => { applyLiveSettings(); loadProducts(); checkAuth(); };
     </script>
 </body>
 </html>
-
