@@ -81,13 +81,30 @@
     <div id="auth-modal" class="fixed inset-0 z-[200] flex items-center justify-center p-6">
         <div class="bg-white w-full max-w-[380px] p-12 rounded-[2rem] shadow-2xl relative animate__animated animate__zoomIn">
             <button onclick="closeAuth()" class="absolute top-8 right-8 text-zinc-300 hover:text-black transition">✕</button>
+            
             <div id="login-form">
                 <h3 class="text-xs font-bold tracking-[0.3em] uppercase mb-10 text-center">Member Login</h3>
                 <div class="space-y-6">
-                    <input type="email" id="l-email" placeholder="EMAIL" class="auth-input w-full p-4 text-[10px] tracking-widest">
-                    <input type="password" id="l-pass" placeholder="PASSWORD" class="auth-input w-full p-4 text-[10px] tracking-widest">
+                    <input type="email" id="l-email" placeholder="EMAIL" class="auth-input w-full p-4 text-[10px] tracking-widest outline-none">
+                    <input type="password" id="l-pass" placeholder="PASSWORD" class="auth-input w-full p-4 text-[10px] tracking-widest outline-none">
                     <button onclick="handleLogin()" class="w-full bg-black text-white py-4 text-[10px] font-bold uppercase tracking-[0.3em] rounded-xl active:scale-95 transition-all">Sign In</button>
                 </div>
+                <p class="mt-8 text-center text-[9px] tracking-widest text-zinc-400">
+                    NEW TO MWS? <span onclick="toggleAuth('reg')" class="text-black cursor-pointer font-bold underline">CREATE ACCOUNT</span>
+                </p>
+            </div>
+
+            <div id="register-form" class="hidden">
+                <h3 class="text-xs font-bold tracking-[0.3em] uppercase mb-10 text-center">Join Archive</h3>
+                <div class="space-y-6">
+                    <input type="text" id="r-nick" placeholder="NICKNAME" class="auth-input w-full p-4 text-[10px] tracking-widest outline-none">
+                    <input type="email" id="r-email" placeholder="EMAIL" class="auth-input w-full p-4 text-[10px] tracking-widest outline-none">
+                    <input type="password" id="r-pass" placeholder="PASSWORD" class="auth-input w-full p-4 text-[10px] tracking-widest outline-none">
+                    <button onclick="handleRegister()" class="w-full bg-black text-white py-4 text-[10px] font-bold uppercase tracking-[0.3em] rounded-xl active:scale-95 transition-all">Register</button>
+                </div>
+                <p class="mt-8 text-center text-[9px] tracking-widest text-zinc-400">
+                    HAVE ACCOUNT? <span onclick="toggleAuth('login')" class="text-black cursor-pointer font-bold underline">BACK TO LOGIN</span>
+                </p>
             </div>
         </div>
     </div>
@@ -134,7 +151,7 @@
         let currentUser = JSON.parse(localStorage.getItem('mws_user')) || null;
         let allProducts = [];
 
-        // 🌟 核心修改 1：点击判断逻辑
+        // 修改点：处理顶部按钮的点击逻辑（登录或进入个人中心）
         function handleUserClick() {
             if (currentUser) {
                 window.location.href = 'account.html';
@@ -149,6 +166,21 @@
             if (currentUser) {
                 btn.innerText = `Account / ${currentUser.nickname || currentUser.username}`;
                 if (currentUser.role === 'admin') adminLink.style.display = 'block';
+            } else {
+                btn.innerText = 'Login';
+            }
+        }
+
+        // 修改点：处理模态框内的表单切换
+        function toggleAuth(mode) {
+            const lForm = document.getElementById('login-form');
+            const rForm = document.getElementById('register-form');
+            if (mode === 'reg') {
+                lForm.classList.add('hidden');
+                rForm.classList.remove('hidden');
+            } else {
+                lForm.classList.remove('hidden');
+                rForm.classList.add('hidden');
             }
         }
 
@@ -186,11 +218,11 @@
             renderGrid(filtered);
         }
 
+        // ✨ 视觉引擎逻辑：保持完整，确保与后台关联无损
         async function applyLiveSettings() {
             try {
                 const res = await fetch('/api/settings');
                 const config = await res.json();
-                
                 if (config.hero_banner) document.getElementById('main-hero-img').src = config.hero_banner;
                 if (config.footer_title) document.getElementById('display-footer-title').innerText = config.footer_title;
                 if (config.footer_desc) document.getElementById('display-footer-desc').innerText = config.footer_desc;
@@ -198,7 +230,6 @@
                     const fImg = document.getElementById('display-footer-img');
                     if (fImg) fImg.src = config.footer_img;
                 }
-                
                 const noticeBar = document.getElementById('top-notice-bar');
                 if (noticeBar) {
                     noticeBar.style.display = (config.show_notice === "true") ? "block" : "none";
@@ -210,7 +241,7 @@
         function openAuth() { document.getElementById('auth-modal').style.display = 'flex'; }
         function closeAuth() { document.getElementById('auth-modal').style.display = 'none'; }
 
-        // 🌟 核心修改 2：登录成功后自动导向个人中心
+        // 修改点：登录后增加重定向到个人中心的逻辑
         async function handleLogin() {
             const email = document.getElementById('l-email').value;
             const pass = document.getElementById('l-pass').value;
@@ -227,10 +258,27 @@
                     checkAuth();
                     closeAuth();
                     window.location.href = 'account.html';
-                } else {
-                    alert("认证失败");
-                }
+                } else { alert("认证失败"); }
             } catch (err) { console.error("Login Error"); }
+        }
+
+        // 修改点：增加处理注册请求的接口调用
+        async function handleRegister() {
+            const nickname = document.getElementById('r-nick').value;
+            const email = document.getElementById('r-email').value;
+            const pass = document.getElementById('r-pass').value;
+            try {
+                const res = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nickname, email, pass })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert("注册成功，请登录");
+                    toggleAuth('login');
+                } else { alert("注册失败，请检查填写内容"); }
+            } catch (err) { console.error("Reg Error"); }
         }
 
         window.onload = () => { applyLiveSettings(); loadProducts(); checkAuth(); };
