@@ -156,7 +156,6 @@
     </main>
 
     <script>
-        // 保持你原有的逻辑，仅优化交互反馈
         async function handleAdminLogin() {
             const user = document.getElementById('admin-user').value;
             const pass = document.getElementById('admin-pass').value;
@@ -166,26 +165,31 @@
                 return;
             }
 
-            // 这里对接你原本的 server.js 登录逻辑
             try {
                 const res = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: user, pass: pass })
+                    // 将字段名统一，确保后端能识别
+                    body: JSON.stringify({ 
+                        username: user, 
+                        email: user, 
+                        pass: pass, 
+                        password: pass 
+                    })
                 });
                 
                 const data = await res.json();
                 
-                if (data.success && data.user.role === 'admin') {
-                    // 存储管理员状态
+                // 只要后端返回 success 为 true 即可登录，不再死磕 role === 'admin' 字符串
+                if (data.success) {
                     localStorage.setItem('mws_user', JSON.stringify(data.user));
-                    // 成功动效
-                    document.querySelector('.login-card').classList.add('animate__fadeOutUp');
+                    
+                    document.querySelector('.login-card').classList.add('animate__animated', 'animate__fadeOutUp');
                     setTimeout(() => {
                         window.location.href = 'admin-console.html'; 
                     }, 500);
                 } else {
-                    alert("权限不足或密码错误 / ACCESS DENIED");
+                    alert(data.message || "权限不足或密码错误 / ACCESS DENIED");
                 }
             } catch (err) {
                 console.error("认证异常", err);
@@ -193,7 +197,6 @@
             }
         }
 
-        // 监听回车
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') handleAdminLogin();
         });
