@@ -146,7 +146,7 @@
             <span class="nav-link" onclick="filterCate('Atelier')">ATELIER 重磅成衣</span>
             <span class="nav-link" onclick="filterCate('Accessories')">ACCESSORIES 配饰</span>
             <span class="nav-link" onclick="filterCate('Bespoke')">BESPOKE 私人定制</span>
-            <span class="nav-link" onclick="filterCate('Archive')">STORY 品牌故事</span>
+            <a href="story.html" class="nav-link">STORY 品牌故事</a>
         </div>
     </aside>
 
@@ -269,6 +269,7 @@
                 const res = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, pass })
                 });
                 const data = await res.json();
@@ -301,7 +302,7 @@
             } catch (err) { console.error("Reg Error"); }
         }
 
-        // --- 私人管家对话框核心逻辑 (新增) ---
+        // --- 私人管家对话框核心逻辑 ---
         function toggleChat() {
             const win = document.getElementById('chat-window');
             if (win.classList.contains('hidden')) {
@@ -319,11 +320,9 @@
             const text = input.value.trim();
             if (!text) return;
 
-            // 获取当前用户信息
             const user = JSON.parse(localStorage.getItem('mws_user'));
             const email = user ? user.email : 'Guest';
 
-            // 前端即时渲染气泡
             msgArea.innerHTML += `
                 <div class="flex flex-col items-end w-full animate__animated animate__fadeInRight animate__faster">
                     <div class="bg-black text-white p-4 rounded-2xl rounded-tr-none max-w-[85%] mb-4">
@@ -333,7 +332,6 @@
             input.value = '';
             msgArea.scrollTop = msgArea.scrollHeight;
 
-            // 发送到后端接口
             try {
                 await fetch('/api/messages/send', {
                     method: 'POST',
@@ -343,7 +341,6 @@
             } catch (err) { console.error("Message Service Error"); }
         }
 
-        // 绑定回车发送事件
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && document.activeElement.id === 'chat-input') {
                 sendChatMessage();
