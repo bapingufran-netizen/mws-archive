@@ -19,8 +19,10 @@
         .mws-input:focus { border-color: var(--mws-black); }
         .btn-login { width: 100%; background: var(--mws-black); color: var(--mws-white); padding: 20px; font-size: 11px; font-weight: 400; letter-spacing: 0.5em; text-transform: uppercase; margin-top: 30px; transition: all 0.4s; position: relative; overflow: hidden; }
         .btn-login:hover { opacity: 0.8; letter-spacing: 0.6em; }
+        .btn-login:disabled { background: #999; opacity: 0.6; cursor: not-allowed; letter-spacing: 0.5em; }
         .back-home { margin-top: 40px; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: #aaa; text-decoration: none; display: inline-block; transition: 0.3s; }
         .back-home:hover { color: #000; }
+        .error-tip { font-size: 9px; color: #ff4444; letter-spacing: 0.1em; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
@@ -32,39 +34,67 @@
         <div class="space-y-2">
             <div class="input-group">
                 <label>Administrator / 账号</label>
-                <input type="text" id="admin-user" class="mws-input" placeholder="admin" autocomplete="off">
+                <input type="text" id="admin-user" class="mws-input" placeholder="admin" autocomplete="off" value="admin">
             </div>
             <div class="input-group">
                 <label>Security Key / 密钥</label>
                 <input type="password" id="admin-pass" class="mws-input" placeholder="PASSWORD">
             </div>
-            <button onclick="handleAdminLogin()" class="btn-login">Verify & Enter</button>
+            <div class="error-tip" id="errorTip"></div>
+            <button onclick="handleAdminLogin()" class="btn-login" id="loginBtn">Verify & Enter</button>
         </div>
         <a href="index.html" class="back-home">← Back to Archive / 返回陈列馆</a>
     </main>
 
     <script>
-        async function handleAdminLogin() {
-            const user = document.getElementById('admin-user').value.trim();
-            const password = document.getElementById('admin-pass').value;
+        // 获取DOM元素
+        const loginBtn = document.getElementById('loginBtn');
+        const errorTip = document.getElementById('errorTip');
+        const userInput = document.getElementById('admin-user');
+        const passInput = document.getElementById('admin-pass');
 
-            if (!user || !password) {
-                alert("请填写完整的管理凭证");
+        async function handleAdminLogin() {
+            const user = userInput.value.trim();
+            const password = passInput.value;
+
+            // 清空之前的错误提示
+            errorTip.style.display = 'none';
+            errorTip.textContent = '';
+
+            // 基础校验
+            if (!user) {
+                showError('请输入管理员账号 / Please enter admin account');
+                userInput.focus();
+                return;
+            }
+            if (!password) {
+                showError('请输入安全密钥 / Please enter security key');
+                passInput.focus();
                 return;
             }
 
+            // 禁用登录按钮，防止重复点击
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Verifying...';
+
             try {
-                // 这里的 email 对应你 server.js 第114行的变量
-                // 这里的 pass 对应你 server.js 第114行的变量
-                const res = await fetch('/api/login', {
+                // 适配后端接口，兼容本地/线上环境
+                const baseUrl = window.location.origin;
+                const res = await fetch(`${baseUrl}/api/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: user, pass: password })
+                    body: JSON.stringify({ email: user, pass: password }),
+                    timeout: 10000 // 超时时间10秒
                 });
-                
+
+                // 处理HTTP状态码错误
+                if (!res.ok) {
+                    throw new Error(`服务器响应错误: ${res.status} ${res.statusText}`);
+                }
+
                 const data = await res.json();
                 
-                // 只要后端返回 success 并且 role 是 admin 就放行
+                // 登录成功逻辑（保留原有动画效果）
                 if (data.success && data.user && data.user.role === 'admin') {
                     localStorage.setItem('mws_user', JSON.stringify(data.user));
                     document.querySelector('.login-card').classList.add('animate__animated', 'animate__fadeOutUp');
@@ -72,17 +102,53 @@
                         window.location.href = 'admin-console.html'; 
                     }, 500);
                 } else {
-                    alert(data.msg || "权限不足或密码错误 / ACCESS DENIED");
+                    // 显示后端返回的具体错误信息
+                    showError(data.msg || "权限不足或密码错误 / ACCESS DENIED");
+                    // 重置按钮状态
+                    resetLoginBtn();
                 }
             } catch (err) {
                 console.error("认证异常", err);
-                alert("系统连接异常，请检查后端是否启动");
+                // 区分不同错误类型，给出更友好的提示
+                if (err.message.includes('Failed to fetch')) {
+                    showError('无法连接到服务器 / Cannot connect to server');
+                } else {
+                    showError('系统连接异常，请稍后重试 / System error, please retry later');
+                }
+                resetLoginBtn();
             }
         }
 
+        // 显示错误提示
+        function showError(msg) {
+            errorTip.textContent = msg;
+            errorTip.style.display = 'block';
+            // 添加错误动画（可选）
+            errorTip.classList.add('animate__animated', 'animate__shakeX');
+            setTimeout(() => {
+                errorTip.classList.remove('animate__shakeX');
+            }, 500);
+        }
+
+        // 重置登录按钮状态
+        function resetLoginBtn() {
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Verify & Enter';
+        }
+
+        // 回车登录
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') handleAdminLogin();
+            if (e.key === 'Enter' && !loginBtn.disabled) {
+                handleAdminLogin();
+            }
         });
+
+        // 页面加载时自动填充admin账号（提升体验）
+        window.onload = function() {
+            if (!userInput.value) {
+                userInput.value = 'admin';
+            }
+        };
     </script>
 </body>
 </html>
