@@ -17,7 +17,7 @@
         .input-group label { font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #ccc; display: block; margin-bottom: 10px; margin-left: 2px; }
         .mws-input { width: 100%; border: none; border-bottom: 1px solid #e5e5e5; padding: 12px 2px; font-size: 13px; font-weight: 300; letter-spacing: 0.1em; outline: none; transition: border-color 0.5s cubic-bezier(0.19, 1, 0.22, 1); }
         .mws-input:focus { border-color: var(--mws-black); }
-        .btn-login { width: 100%; background: var(--mws-black); color: var(--mws-white); padding: 20px; font-size: 11px; font-weight: 400; letter-spacing: 0.5em; text-transform: uppercase; margin-top: 30px; transition: all 0.4s; position: relative; overflow: hidden; }
+        .btn-login { width: 100%; background: var(--mws-black); color: var(--mws-white); padding: 20px; font-size: 11px; font-weight: 400; letter-spacing: 0.5em; text-transform: uppercase; margin-top: 30px; transition: all 0.4s; position: relative; overflow: hidden; cursor: pointer; }
         .btn-login:hover { opacity: 0.8; letter-spacing: 0.6em; }
         .btn-login:disabled { background: #999; opacity: 0.6; cursor: not-allowed; letter-spacing: 0.5em; }
         .back-home { margin-top: 40px; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: #aaa; text-decoration: none; display: inline-block; transition: 0.3s; }
@@ -38,7 +38,7 @@
             </div>
             <div class="input-group">
                 <label>Security Key / 密钥</label>
-                <input type="password" id="admin-pass" class="mws-input" placeholder="mwsadmin123">
+                <input type="password" id="admin-pass" class="mws-input" placeholder="请输入密钥">
             </div>
             <div class="error-tip" id="errorTip"></div>
             <button onclick="handleAdminLogin()" class="btn-login" id="loginBtn">Verify & Enter</button>
@@ -52,49 +52,70 @@
         const userInput = document.getElementById('admin-user');
         const passInput = document.getElementById('admin-pass');
 
+        // 设置你想要的正确密钥
+        const CORRECT_USER = "admin";
+        const CORRECT_KEY = "mwsadmin123";
+
         async function handleAdminLogin() {
             const user = userInput.value.trim();
             const password = passInput.value;
 
             errorTip.textContent = '';
-            if (!user) {
-                errorTip.textContent = '请输入管理员账号';
-                userInput.focus();
+            
+            // 1. 判空处理
+            if (!user || !password) {
+                errorTip.textContent = '请完整填写账号和密钥';
                 return;
             }
-            if (!password) {
-                errorTip.textContent = '请输入安全密钥';
+
+            // 2. 账号密码校验
+            if (user === CORRECT_USER && password === CORRECT_KEY) {
+                loginBtn.disabled = true;
+                loginBtn.textContent = 'Verifying...';
+
+                try {
+                    // 存储登录凭证到 LocalStorage
+                    const sessionData = {
+                        user: user,
+                        role: 'admin',
+                        timestamp: new Date().getTime()
+                    };
+                    localStorage.setItem('mws_user', JSON.stringify(sessionData));
+
+                    // 3. 执行跳转（尝试多种路径写法以确保成功）
+                    console.log("验证通过，正在跳转...");
+                    
+                    // 优先使用 replace，防止用户按返回键回到登录页
+                    window.location.replace('admin-console.html');
+                    
+                    // 兜底跳转方案：如果 replace 失败，300ms 后尝试 href
+                    setTimeout(() => {
+                        window.location.href = './admin-console.html';
+                    }, 300);
+
+                } catch (err) {
+                    console.error("Storage Error:", err);
+                    errorTip.textContent = '浏览器存储异常，请关闭隐私模式或检查 Cookie 设置';
+                    loginBtn.disabled = false;
+                }
+            } else {
+                // 校验失败反馈
+                errorTip.textContent = '账号或安全密钥错误，请重试';
+                passInput.value = '';
                 passInput.focus();
-                return;
-            }
-
-            loginBtn.disabled = true;
-            loginBtn.textContent = 'Verifying...';
-
-            // 适配当前目录结构的跳转逻辑
-            try {
-                // 1. 存储登录状态（确保后台页识别）
-                localStorage.setItem('mws_user', JSON.stringify({
-                    email: 'admin',
-                    role: 'admin'
-                }));
-                // 2. 直接跳转（同一目录下的admin-console.html）
-                window.location.href = './admin-console.html';
-            } catch (err) {
-                // 兜底：强制替换路径跳转
-                window.location.replace('./admin-console.html');
-            } finally {
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Verify & Enter';
             }
         }
 
+        // 监听回车键
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !loginBtn.disabled) handleAdminLogin();
+            if (e.key === 'Enter' && !loginBtn.disabled) {
+                handleAdminLogin();
+            }
         });
 
+        // 自动聚焦密码框
         window.onload = () => {
-            if (!userInput.value) userInput.value = 'admin';
+            passInput.focus();
         };
     </script>
 </body>
