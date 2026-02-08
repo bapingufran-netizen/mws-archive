@@ -147,6 +147,12 @@ app.post('/api/login', async (req, res) => {
         if (!isMatch) return res.json({ success: false, msg: "密码错误" });
 
         delete user.password;
+
+        // ✨ 关键修改：如果账号名是 admin，强制给它 admin 权限
+        if (email === 'admin' || user.role === 'admin') {
+            user.role = 'admin'; 
+        }
+
         res.json({ success: true, user: user });
     } catch (err) {
         res.status(500).json({ success: false, msg: "登录异常" });
@@ -220,6 +226,7 @@ const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
     console.log(`🚀 M.W.S 系统在线 (认证增强版) | 端口: ${PORT}`);
 });
+
 
 
 
