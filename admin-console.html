@@ -1,111 +1,156 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
+    <script>
+        // 【1. 权限守卫】必须放在最顶部，防止未授权内容闪现
+        (function() {
+            const authStatus = localStorage.getItem('mws_auth_status');
+            const loginTime = localStorage.getItem('login_time');
+            const maxAge = 24 * 60 * 60 * 1000; // 24小时过期
+
+            // 检查：如果没有登录状态，或者登录已过期
+            if (authStatus !== 'true' || !loginTime || (Date.now() - parseInt(loginTime) > maxAge)) {
+                // 清除可能残留的脏数据
+                localStorage.removeItem('mws_auth_status');
+                localStorage.removeItem('login_time');
+                // 强制跳回登录页
+                window.location.replace('admin-login.html'); 
+            }
+        })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MWS ARCHIVE | 管理员认证</title>
+    <title>M.W.S | 系统控制中枢</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400&family=Inter:wght@200;300&display=swap');
-        :root { --mws-black: #000000; --mws-white: #ffffff; --mws-gray: #f2f2f2; }
-        body { font-family: 'Inter', sans-serif; background-color: var(--mws-white); color: var(--mws-black); overflow: hidden; height: 100vh; display: flex; align-items: center; justify-content: center; }
-        .bg-line { position: absolute; background: #000; opacity: 0.03; z-index: 0; }
-        .login-card { width: 100%; max-width: 450px; padding: 80px 60px; background: #fff; position: relative; z-index: 10; text-align: center; }
-        .logo-area { font-family: 'Montserrat', sans-serif; font-size: 20px; font-weight: 200; letter-spacing: 0.8em; text-transform: uppercase; margin-bottom: 60px; margin-left: 0.8em; }
-        .input-group { position: relative; margin-bottom: 40px; text-align: left; }
-        .input-group label { font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #ccc; display: block; margin-bottom: 10px; margin-left: 2px; }
-        .mws-input { width: 100%; border: none; border-bottom: 1px solid #e5e5e5; padding: 12px 2px; font-size: 13px; font-weight: 300; letter-spacing: 0.1em; outline: none; transition: border-color 0.5s cubic-bezier(0.19, 1, 0.22, 1); }
-        .mws-input:focus { border-color: var(--mws-black); }
-        .btn-login { width: 100%; background: var(--mws-black); color: var(--mws-white); padding: 20px; font-size: 11px; font-weight: 400; letter-spacing: 0.5em; text-transform: uppercase; margin-top: 30px; transition: all 0.4s; position: relative; overflow: hidden; cursor: pointer; }
-        .btn-login:hover { opacity: 0.8; letter-spacing: 0.6em; }
-        .btn-login:disabled { background: #999; opacity: 0.6; cursor: not-allowed; letter-spacing: 0.5em; }
-        .back-home { margin-top: 40px; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: #aaa; text-decoration: none; display: inline-block; transition: 0.3s; }
-        .back-home:hover { color: #000; }
-        .error-tip { font-size: 9px; color: #ff4444; letter-spacing: 0.1em; margin-top: 10px; display: block; height: 12px; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background: #fff; color: #000; overflow: hidden; }
+        
+        .console-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            height: 100vh;
+        }
+
+        .nav-card {
+            border-right: 1px solid #f0f0f0;
+            padding: 60px 40px;
+            transition: all 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-card:hover { background: #000; color: #fff; }
+        .nav-card:last-child { border-right: none; }
+
+        .card-num { font-size: 10px; font-weight: 900; letter-spacing: 0.3em; opacity: 0.3; }
+        .nav-card:hover .card-num { opacity: 0.6; color: #fff; }
+
+        .card-title { font-size: 18px; font-weight: 900; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.1em; }
+        .card-desc { font-size: 10px; font-weight: 400; margin-top: 20px; line-height: 1.8; opacity: 0.5; }
+        .nav-card:hover .card-desc { opacity: 0.8; }
+
+        .status-dot { width: 6px; height: 6px; background: #52c41a; border-radius: 50%; display: inline-block; margin-right: 8px; }
+
+        /* 登出按钮样式 */
+        .logout-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            padding: 10px 20px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        .logout-btn:hover {
+            background: #ff4d4f;
+            color: #fff;
+        }
     </style>
 </head>
 <body>
-    <div class="bg-line w-[1px] h-full left-[20%]"></div>
-    <div class="bg-line w-full h-[1px] top-[40%]"></div>
 
-    <main class="login-card animate__animated animate__fadeIn">
-        <div class="logo-area">MWS Studio</div>
-        <div class="space-y-2">
-            <div class="input-group">
-                <label>Administrator / 账号</label>
-                <input type="text" id="admin-user" class="mws-input" placeholder="admin" autocomplete="off" value="admin">
+    <button onclick="logout()" class="logout-btn">
+        Log Out / 退出系统
+    </button>
+
+    <div class="console-grid">
+        <div onclick="location.href='studio.html'" class="nav-card">
+            <div class="card-num">01 / ARCHIVE</div>
+            <div>
+                <h2 class="card-title">STUDIO<br>工作室管理</h2>
+                <p class="card-desc">商品档案录入、SKU 规格管理及价格策略。已接通 Cloudinary 云端图库。</p>
             </div>
-            <div class="input-group">
-                <label>Security Key / 密钥</label>
-                <input type="password" id="admin-pass" class="mws-input" placeholder="请输入密钥">
-            </div>
-            <div class="error-tip" id="errorTip"></div>
-            <button onclick="handleAdminLogin()" class="btn-login" id="loginBtn">Verify & Enter</button>
+            <div class="text-[9px] font-bold uppercase tracking-widest"><span class="status-dot"></span>System Active</div>
         </div>
-        <a href="index.html" class="back-home">← Back to Archive / 返回陈列馆</a>
-    </main>
+
+        <div onclick="location.href='admin-media.html'" class="nav-card">
+            <div class="card-num">02 / ASSETS</div>
+            <div>
+                <h2 class="card-title">MEDIA<br>媒体资产库</h2>
+                <p class="card-desc">全站视觉素材中心。管理高清摄影、视频档案及品牌视觉资产。</p>
+            </div>
+            <div class="text-[9px] font-bold uppercase tracking-widest">Storage: Cloud</div>
+        </div>
+
+        <div onclick="location.href='admin-journal.html'" class="nav-card">
+            <div class="card-num">03 / STORY</div>
+            <div>
+                <h2 class="card-title">JOURNAL<br>叙事志管理</h2>
+                <p class="card-desc">撰写品牌章节、匠心工艺及穿搭博文。封面图实现云端永久同步。</p>
+            </div>
+            <div class="text-[9px] font-bold uppercase tracking-widest">Editorial Mode</div>
+        </div>
+
+        <div onclick="location.href='admin-layout.html'" class="nav-card">
+            <div class="card-num">04 / DESIGN</div>
+            <div>
+                <h2 class="card-title">LAYOUT<br>视觉引擎</h2>
+                <p class="card-desc">配置官网主页 Banner、配色方案及全站排版布局逻辑。</p>
+            </div>
+            <div class="text-[9px] font-bold uppercase tracking-widest">Interface v2.0</div>
+        </div>
+
+        <div onclick="location.href='admin-data.html'" class="nav-card">
+            <div class="card-num">05 / INTELLIGENCE</div>
+            <div>
+                <h2 class="card-title">DATA CENTER<br>数据中枢</h2>
+                <p class="card-desc">订单链路追踪、会员资料看板及销售报表统计。品牌的大脑决策中心。</p>
+            </div>
+            <div class="text-[9px] font-bold uppercase tracking-widest text-[#52c41a]">Connected</div>
+        </div>
+    </div>
 
     <script>
-        const loginBtn = document.getElementById('loginBtn');
-        const errorTip = document.getElementById('errorTip');
-        const userInput = document.getElementById('admin-user');
-        const passInput = document.getElementById('admin-pass');
-
-        // 设置预设的正确账号和密钥
-        const CORRECT_USER = "admin";
-        const CORRECT_KEY = "mwsadmin123";
-
-        async function handleAdminLogin() {
-            const user = userInput.value.trim();
-            const password = passInput.value;
-
-            errorTip.textContent = '';
-            
-            // 基础校验
-            if (!user || !password) {
-                errorTip.textContent = '请完整填写账号和密钥';
-                return;
-            }
-
-            // 核心逻辑：匹配账号与密钥
-            if (user === CORRECT_USER && password === CORRECT_KEY) {
-                loginBtn.disabled = true;
-                loginBtn.textContent = 'Verifying...';
-
-                try {
-                    // 【关键修复点】：必须写入 admin-console.html 权限守卫检查的变量名
-                    localStorage.setItem('mws_auth_status', 'true'); 
-                    localStorage.setItem('login_time', Date.now().toString()); 
-                    
-                    // 额外存储用户信息备份
-                    localStorage.setItem('mws_user', JSON.stringify({user: user, role: 'admin'}));
-
-                    // 执行页面跳转
-                    window.location.replace('admin-console.html');
-                    
-                } catch (err) {
-                    errorTip.textContent = '浏览器存储异常，请关闭隐私模式重试';
-                    loginBtn.disabled = false;
-                    loginBtn.textContent = 'Verify & Enter';
-                }
-            } else {
-                errorTip.textContent = '账号或安全密钥错误';
-                passInput.value = '';
-                passInput.focus();
+        // 核心登出逻辑
+        function logout() {
+            if(confirm('确定要退出管理系统吗？')) {
+                localStorage.removeItem('mws_auth_status');
+                localStorage.removeItem('login_time');
+                localStorage.removeItem('mws_user');
+                window.location.replace('admin-login.html');
             }
         }
 
-        // 支持键盘回车登录
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !loginBtn.disabled) {
-                handleAdminLogin();
+        // 页面防挂机：如果标签页可见性变化，重新检查权限
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                const authStatus = localStorage.getItem('mws_auth_status');
+                if (authStatus !== 'true') {
+                    window.location.replace('admin-login.html');
+                }
             }
         });
-
-        window.onload = () => {
-            passInput.focus();
-        };
     </script>
+    
 </body>
 </html>
