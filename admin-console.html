@@ -1,6 +1,20 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
+    <script>
+        // 【1. 权限守卫】必须放在最顶部，防止内容闪现
+        (function() {
+            const authStatus = localStorage.getItem('mws_auth_status');
+            const loginTime = localStorage.getItem('login_time');
+            const maxAge = 24 * 60 * 60 * 1000; // 24小时过期
+
+            if (!authStatus || (Date.now() - loginTime > maxAge)) {
+                localStorage.removeItem('mws_auth_status');
+                localStorage.removeItem('login_time');
+                window.location.href = 'admin-login.html'; 
+            }
+        })();
+    </script>
     <meta charset="UTF-8">
     <title>M.W.S | 系统控制中枢</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -37,12 +51,35 @@
         .nav-card:hover .card-desc { opacity: 0.8; }
 
         .status-dot { width: 6px; height: 6px; background: #52c41a; border-radius: 50%; display: inline-block; margin-right: 8px; }
+
+        /* 登出按钮样式 */
+        .logout-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            padding: 10px 20px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        .logout-btn:hover {
+            background: #ff4d4f;
+            color: #fff;
+        }
     </style>
 </head>
 <body>
 
+    <button onclick="logout()" class="logout-btn">
+        Log Out / 退出系统
+    </button>
+
     <div class="console-grid">
-        
         <div onclick="location.href='studio.html'" class="nav-card">
             <div class="card-num">01 / ARCHIVE</div>
             <div>
@@ -87,17 +124,18 @@
             </div>
             <div class="text-[9px] font-bold uppercase tracking-widest text-[#52c41a]">Connected</div>
         </div>
-
     </div>
 
     <script>
-        // 门禁逻辑：防止未授权访问控制台
-        (function checkAuth() {
-            const token = localStorage.getItem('mws_admin_token');
-            if (!token || !token.startsWith('AUTHORIZED_')) { 
-                window.location.href = 'login.html'; 
+        // 核心登出逻辑
+        function logout() {
+            if(confirm('确定要退出管理系统吗？')) {
+                localStorage.removeItem('mws_auth_status');
+                localStorage.removeItem('login_time');
+                window.location.href = 'admin-login.html';
             }
-        })();
+        }
     </script>
+    
 </body>
 </html>
