@@ -12,190 +12,219 @@
         :root {
             --chanel-black: #000000;
             --chanel-gray: #767676;
+            --chanel-light-gray: #f2f2f2;
         }
 
         body { font-family: 'Inter', sans-serif; background: #fff; overflow-x: hidden; color: var(--chanel-black); }
         ::-webkit-scrollbar { width: 0px; } 
 
-        /* ✨ 1. 香奈儿式顶部导航：Logo 绝对居中 */
+        /* ✨ 1. 顶部导航重构：Logo 居中 */
         .brand-header {
             position: fixed; top: 0; left: 0; width: 100%; height: 100px;
             display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
-            padding: 0 50px; background: #fff; z-index: 1000;
-            border-bottom: 1px solid #f2f2f2;
+            padding: 0 50px; background: rgba(255,255,255,0.98); backdrop-filter: blur(15px); z-index: 1000;
+            border-bottom: 1px solid var(--chanel-light-gray);
         }
 
         .logo-text {
             font-family: 'Montserrat', sans-serif;
-            font-size: 24px; font-weight: 300; letter-spacing: 0.6em;
-            text-transform: uppercase; cursor: pointer;
+            font-size: 22px; font-weight: 300; letter-spacing: 0.7em;
+            text-transform: uppercase; cursor: pointer; margin-left: 0.7em; /* 补偿末尾字间距 */
         }
 
-        /* 顶部通告栏 */
         #top-notice-bar {
             position: fixed; top: 100px; width: 100%; background: #000; color: #fff; 
             font-size: 9px; padding: 10px 0; text-align: center; letter-spacing: 0.3em;
             text-transform: uppercase; z-index: 999; display: none;
         }
 
-        /* ✨ 2. 横向分类菜单 (取代侧边栏) */
+        /* ✨ 2. 横向分类菜单 */
         .category-nav {
-            display: flex; justify-content: center; gap: 40px;
-            padding: 30px 0; border-bottom: 1px solid #f9f9f9;
-            margin-top: 130px; /* 避开 Header 和 Notice */
+            display: flex; justify-content: center; gap: 45px;
+            padding: 40px 0 20px; margin-top: 130px;
         }
 
         .nav-link {
-            font-size: 11px; font-weight: 600; letter-spacing: 0.2em;
+            font-size: 11px; font-weight: 600; letter-spacing: 0.25em;
             text-transform: uppercase; color: var(--chanel-gray);
-            cursor: pointer; transition: 0.3s; position: relative;
+            cursor: pointer; transition: 0.4s cubic-bezier(0.19, 1, 0.22, 1); position: relative;
         }
         .nav-link:after {
-            content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 1px;
-            background: #000; transition: 0.3s;
+            content: ''; position: absolute; bottom: -6px; left: 0; width: 0; height: 1px;
+            background: #000; transition: 0.3s ease;
         }
         .nav-link:hover:after, .nav-link.active:after { width: 100%; }
         .nav-link:hover, .nav-link.active { color: #000; }
 
-        /* ✨ 3. 大海报区域 (Hero Section) */
-        .hero-banner { 
-            height: 80vh; width: 100%; position: relative; 
-            overflow: hidden; background: #f5f5f5; margin-bottom: 80px;
+        /* ✨ 3. 极简搜索区域 (你标注的位置) */
+        .search-area {
+            max-width: 1400px; margin: 0 auto 60px; padding: 0 50px;
+            display: flex; justify-content: flex-start;
         }
-        .hero-img { width: 100%; height: 100%; object-fit: cover; }
+        .search-wrapper {
+            position: relative; width: 100%; max-width: 260px;
+            border-bottom: 1px solid #e5e5e5; transition: border-color 0.4s;
+        }
+        .search-wrapper:focus-within { border-color: #000; }
+        #main-search-input {
+            width: 100%; py: 10px; background: transparent; border: none; outline: none;
+            font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 300;
+            padding: 8px 30px 8px 0;
+        }
+
+        /* ✨ 4. 大海报区域 */
+        .hero-banner { 
+            height: 75vh; width: 100%; position: relative; 
+            overflow: hidden; background: #000; margin-bottom: 100px;
+        }
+        .hero-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.95; transition: 2s; }
         .hero-overlay {
             position: absolute; inset: 0; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; background: rgba(0,0,0,0.05);
+            align-items: center; justify-content: center; background: rgba(0,0,0,0.1);
         }
 
-        /* ✨ 4. 产品网格重构 (奢侈品感一排不宜过多) */
+        /* ✨ 5. 产品网格与卡片 */
         .product-card { 
-            opacity: 0; transform: translateY(30px); transition: 1s cubic-bezier(0.19, 1, 0.22, 1); 
+            opacity: 0; transform: translateY(40px); transition: 1.2s cubic-bezier(0.19, 1, 0.22, 1); 
         }
         .product-card.visible { opacity: 1; transform: translateY(0); }
-        .card-img-wrapper { aspect-ratio: 3/4; overflow: hidden; background: #fcfcfc; margin-bottom: 25px; }
+        .card-img-wrapper { aspect-ratio: 3/4; overflow: hidden; background: #fdfdfd; margin-bottom: 30px; }
 
-        /* Auth 模块保持你原有的逻辑与美感 */
-        #auth-modal { backdrop-filter: blur(25px); background: rgba(255,255,255,0.6); display: none; }
-        .auth-input { background: #fcfcfc; border-radius: 12px; border: 1px solid #f0f0f0; transition: 0.3s; }
+        /* 会员模态框美化 */
+        #auth-modal { backdrop-filter: blur(30px); background: rgba(255,255,255,0.7); display: none; }
+        .auth-input { background: #fff; border: 1px solid #eee; transition: 0.4s; padding: 1.25rem; font-size: 0.75rem; }
+        .auth-input:focus { border-color: #000; }
+
+        .custom-scroll::-webkit-scrollbar { width: 2px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #000; }
     </style>
 </head>
 <body>
 
-    <header class="brand-header">
-        <nav class="flex gap-8 items-center">
-            <a href="story.html" class="text-[10px] tracking-[0.2em] font-bold uppercase hover:opacity-50">Story</a>
-            <span onclick="toggleChat()" class="text-[10px] tracking-[0.2em] font-bold uppercase cursor-pointer hover:opacity-50">Concierge</span>
-        </nav>
+    <header class="brand-header animate__animated animate__fadeInDown">
+        <div class="flex gap-10 items-center">
+            <a href="story.html" class="text-[10px] tracking-[0.3em] font-bold uppercase hover:opacity-50 transition">Story</a>
+            <span onclick="toggleChat()" class="text-[10px] tracking-[0.3em] font-bold uppercase cursor-pointer hover:opacity-50 transition">Concierge</span>
+        </div>
         
         <div class="logo-text" onclick="location.reload()">MR WANG SILK</div>
         
-        <div class="flex justify-end gap-8 items-center">
-            <button id="user-btn" onclick="handleUserClick()" class="text-[10px] tracking-[0.2em] font-bold uppercase border-b border-black">Login</button>
-            <a href="studio.html" id="admin-link" class="hidden text-[10px] tracking-[0.2em] font-bold uppercase bg-black text-white px-3 py-1">Studio</a>
+        <div class="flex justify-end gap-10 items-center">
+            <button id="user-btn" onclick="handleUserClick()" class="text-[10px] tracking-[0.3em] font-bold uppercase border-b border-black pb-0.5">Login</button>
+            <a href="studio.html" id="admin-link" class="hidden text-[9px] tracking-[0.3em] font-bold uppercase bg-black text-white px-3 py-1.5 rounded-sm">Studio</a>
         </div>
     </header>
 
     <div id="top-notice-bar"></div>
 
     <nav class="category-nav animate__animated animate__fadeIn">
-        <span class="nav-link active" onclick="filterCate('ALL')">All</span>
-        <span class="nav-link" onclick="filterCate('Silk Series')">Silk</span>
-        <span class="nav-link" onclick="filterCate('Cashmere')">Cashmere</span>
-        <span class="nav-link" onclick="filterCate('Atelier')">Atelier</span>
-        <span class="nav-link" onclick="filterCate('Accessories')">Accessories</span>
-        <span class="nav-link" onclick="filterCate('Bespoke')">Bespoke</span>
+        <span class="nav-link active" onclick="filterCate('ALL')">All 全部</span>
+        <span class="nav-link" onclick="filterCate('Silk Series')">Silk 真丝</span>
+        <span class="nav-link" onclick="filterCate('Cashmere')">Cashmere 羊绒</span>
+        <span class="nav-link" onclick="filterCate('Atelier')">Atelier 成衣</span>
+        <span class="nav-link" onclick="filterCate('Accessories')">Accessories 配饰</span>
+        <span class="nav-link" onclick="filterCate('Bespoke')">Bespoke 定制</span>
     </nav>
 
+    <div class="search-area">
+        <div class="search-wrapper">
+            <input type="text" id="main-search-input" placeholder="Search / 搜索商品..." autocomplete="off">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 absolute right-0 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+        </div>
+    </div>
+
     <section class="hero-banner">
-        <img id="main-hero-img" src="" class="hero-img" alt="Hero">
+        <img id="main-hero-img" src="" class="hero-img" alt="Luxury Archive">
         <div class="hero-overlay">
-            <h2 class="text-white text-4xl font-light tracking-[0.4em] uppercase mb-8 animate__animated animate__fadeInUp">The Archive</h2>
-            <a href="#product-grid" class="px-10 py-4 border border-white text-white text-[10px] tracking-[0.3em] uppercase hover:bg-white hover:text-black transition-all">Explore Collections</a>
+            <h2 class="text-white text-5xl font-extralight tracking-[0.5em] uppercase mb-10 animate__animated animate__fadeInUp">The Collection</h2>
+            <a href="#product-grid" class="px-12 py-4 border border-white text-white text-[10px] tracking-[0.4em] uppercase hover:bg-white hover:text-black transition-all duration-700">Explore Now</a>
         </div>
     </section>
 
-    <main class="max-w-[1400px] mx-auto px-10 pb-40">
-        <div id="product-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-12 gap-y-24">
+    <main class="max-w-[1500px] mx-auto px-10 pb-40">
+        <div id="product-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-16 gap-y-32">
             </div>
     </main>
 
-    <section class="py-40 bg-[#f9f9f9] border-t border-gray-100">
-        <div class="max-w-6xl mx-auto px-10 grid lg:grid-cols-2 gap-20 items-center">
-            <div>
-                <h4 id="display-footer-title" class="text-[10px] font-bold tracking-[0.4em] uppercase mb-10 text-zinc-400">01. Heritage</h4>
-                <p id="display-footer-desc" class="text-sm text-zinc-600 leading-[2.2] font-light tracking-wide"></p>
+    <section class="py-48 bg-[#fafafa] border-t border-gray-100">
+        <div class="max-w-6xl mx-auto px-10 grid lg:grid-cols-2 gap-24 items-center">
+            <div class="animate__animated animate__fadeInLeft">
+                <h4 id="display-footer-title" class="text-[10px] font-bold tracking-[0.5em] uppercase mb-12 text-zinc-400">01. Heritage</h4>
+                <p id="display-footer-desc" class="text-[13px] text-zinc-500 leading-[2.4] font-light tracking-widest"></p>
+                <a href="story.html" class="inline-block mt-12 text-[10px] tracking-[0.3em] font-bold border-b border-black pb-1 uppercase">Read More</a>
             </div>
-            <div class="overflow-hidden">
-                <img id="display-footer-img" src="" class="w-full grayscale hover:grayscale-0 transition-all duration-1000" alt="Legacy">
+            <div class="relative overflow-hidden group">
+                <img id="display-footer-img" src="" class="w-full grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-[2s]" alt="Legacy">
             </div>
         </div>
     </section>
 
-    <footer class="py-20 text-center border-t border-gray-50 bg-white">
-        <p class="text-[10px] tracking-[0.6em] text-gray-300 uppercase font-light">© 2026 MR WANG SILK. PRIVÉ ARCHIVE.</p>
+    <footer class="py-24 text-center border-t border-gray-50 bg-white">
+        <p class="text-[10px] tracking-[0.7em] text-gray-300 uppercase font-light">© 2026 MR WANG SILK. PRIVÉ ARCHIVE.</p>
     </footer>
 
     <div id="auth-modal" class="fixed inset-0 z-[2000] flex items-center justify-center p-6">
-        <div class="bg-white w-full max-w-[460px] p-16 rounded-[3rem] shadow-2xl relative animate__animated animate__fadeInUp">
-            <button onclick="closeAuth()" class="absolute top-10 right-10 text-zinc-300 hover:text-black transition">✕</button>
+        <div class="bg-white w-full max-w-[480px] p-20 rounded-[3.5rem] shadow-2xl relative animate__animated animate__fadeInUp">
+            <button onclick="closeAuth()" class="absolute top-12 right-12 text-zinc-300 hover:text-black transition text-xl">✕</button>
             
             <div id="login-form">
-                <div class="mb-12 text-center">
-                    <h3 class="text-xl font-medium tracking-tighter mb-2">会员登录</h3>
-                    <p class="text-[9px] font-bold tracking-[0.3em] uppercase text-zinc-300">Member Login</p>
+                <div class="mb-14 text-center">
+                    <h3 class="text-2xl font-light tracking-tighter mb-3">会员登录</h3>
+                    <p class="text-[9px] font-bold tracking-[0.4em] uppercase text-zinc-300">Member Login</p>
                 </div>
                 <div class="space-y-6">
-                    <input type="email" id="l-email" placeholder="Email / 邮箱" class="auth-input w-full p-5 text-xs outline-none">
-                    <input type="password" id="l-pass" placeholder="Password / 密码" class="auth-input w-full p-5 text-xs outline-none">
-                    <button onclick="handleLogin()" class="w-full bg-black text-white py-5 text-[11px] font-bold uppercase tracking-[0.4em] rounded-2xl active:scale-95 transition-all">Sign In</button>
+                    <input type="email" id="l-email" placeholder="Email / 邮箱" class="auth-input w-full rounded-2xl outline-none">
+                    <input type="password" id="l-pass" placeholder="Password / 密码" class="auth-input w-full rounded-2xl outline-none">
+                    <button onclick="handleLogin()" class="w-full bg-black text-white py-6 text-[11px] font-bold uppercase tracking-[0.5em] rounded-2xl active:scale-95 transition-all mt-4">Sign In</button>
                 </div>
-                <p class="mt-10 text-center text-[10px] tracking-widest text-zinc-400">
-                    NEW MEMBER? <span onclick="toggleAuth('reg')" class="text-black cursor-pointer font-bold underline underline-offset-4 ml-2">CREATE ACCOUNT</span>
+                <p class="mt-12 text-center text-[10px] tracking-widest text-zinc-400">
+                    NEW MEMBER? <span onclick="toggleAuth('reg')" class="text-black cursor-pointer font-bold underline underline-offset-8 ml-2">CREATE ACCOUNT</span>
                 </p>
             </div>
 
             <div id="register-form" class="hidden">
-                <div class="mb-12 text-center">
-                    <h3 class="text-xl font-medium tracking-tighter mb-2">加入陈列馆</h3>
-                    <p class="text-[9px] font-bold tracking-[0.3em] uppercase text-zinc-300">Join the Archive</p>
+                <div class="mb-14 text-center">
+                    <h3 class="text-2xl font-light tracking-tighter mb-3">加入陈列馆</h3>
+                    <p class="text-[9px] font-bold tracking-[0.4em] uppercase text-zinc-300">Join the Archive</p>
                 </div>
                 <div class="space-y-6">
-                    <input type="text" id="r-nick" placeholder="Nickname / 昵称" class="auth-input w-full p-5 text-xs outline-none">
-                    <input type="email" id="r-email" placeholder="Email / 邮箱" class="auth-input w-full p-5 text-xs outline-none">
-                    <input type="password" id="r-pass" placeholder="Password / 密码" class="auth-input w-full p-5 text-xs outline-none">
-                    <button onclick="handleRegister()" class="w-full bg-black text-white py-5 text-[11px] font-bold uppercase tracking-[0.4em] rounded-2xl active:scale-95 transition-all">Register</button>
+                    <input type="text" id="r-nick" placeholder="Nickname / 昵称" class="auth-input w-full rounded-2xl outline-none">
+                    <input type="email" id="r-email" placeholder="Email / 邮箱" class="auth-input w-full rounded-2xl outline-none">
+                    <input type="password" id="r-pass" placeholder="Password / 密码" class="auth-input w-full rounded-2xl outline-none">
+                    <button onclick="handleRegister()" class="w-full bg-black text-white py-6 text-[11px] font-bold uppercase tracking-[0.5em] rounded-2xl active:scale-95 transition-all mt-4">Register</button>
                 </div>
-                <p class="mt-10 text-center text-[10px] tracking-widest text-zinc-400">
-                    ALREADY HAVE AN ACCOUNT? <span onclick="toggleAuth('login')" class="text-black cursor-pointer font-bold underline underline-offset-4 ml-2">BACK TO LOGIN</span>
+                <p class="mt-12 text-center text-[10px] tracking-widest text-zinc-400">
+                    ALREADY HAVE AN ACCOUNT? <span onclick="toggleAuth('login')" class="text-black cursor-pointer font-bold underline underline-offset-8 ml-2">BACK TO LOGIN</span>
                 </p>
             </div>
         </div>
     </div>
 
-    <div id="chat-trigger" onclick="toggleChat()" class="fixed bottom-10 right-10 w-12 h-12 bg-black text-white rounded-full flex items-center justify-center cursor-pointer shadow-xl z-[9999] hover:scale-110 transition-transform">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div id="chat-trigger" onclick="toggleChat()" class="fixed bottom-12 right-12 w-14 h-14 bg-black text-white rounded-full flex items-center justify-center cursor-pointer shadow-2xl z-[9999] hover:scale-110 transition-transform">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
         </svg>
     </div>
 
-    <div id="chat-window" class="fixed bottom-24 right-10 w-[360px] h-[520px] bg-white border border-zinc-100 rounded-[2.5rem] shadow-2xl z-[9999] hidden flex-col overflow-hidden animate__animated animate__fadeInUp animate__faster">
-        <div class="bg-black p-8 flex justify-between items-center">
+    <div id="chat-window" class="fixed bottom-28 right-12 w-[380px] h-[550px] bg-white border border-zinc-100 rounded-[3rem] shadow-2xl z-[9999] hidden flex-col overflow-hidden animate__animated animate__fadeInUp animate__faster">
+        <div class="bg-black p-10 flex justify-between items-center">
             <div>
-                <h3 class="text-white text-[10px] font-bold tracking-[0.4em] uppercase">Archive Concierge</h3>
-                <p class="text-zinc-500 text-[8px] tracking-widest mt-1">PRIVATE SERVICE</p>
+                <h3 class="text-white text-[11px] font-bold tracking-[0.4em] uppercase">Archive Concierge</h3>
+                <p class="text-zinc-500 text-[8px] tracking-widest mt-2 uppercase">Private Service</p>
             </div>
             <button onclick="toggleChat()" class="text-white opacity-40 hover:opacity-100">✕</button>
         </div>
-        <div id="chat-messages" class="flex-1 p-8 overflow-y-auto space-y-6 bg-white custom-scroll">
-            <div class="bg-zinc-50 p-5 rounded-3xl rounded-tl-none text-[11px] leading-relaxed text-zinc-600">
+        <div id="chat-messages" class="flex-1 p-10 overflow-y-auto space-y-8 bg-white custom-scroll">
+            <div class="bg-zinc-50 p-6 rounded-[2rem] rounded-tl-none text-[12px] leading-relaxed text-zinc-600 font-light tracking-wide">
                 您好。欢迎来到 MR WANG SILK 官方陈列馆。关于真丝作品的任何疑问，请在此留下您的讯息。
             </div>
         </div>
-        <div class="p-6 border-t border-zinc-50 bg-white">
-            <div class="flex gap-4">
-                <input type="text" id="chat-input" placeholder="Message..." class="flex-1 text-[11px] outline-none placeholder:text-zinc-300">
-                <button onclick="sendChatMessage()" class="text-[10px] font-bold uppercase tracking-widest text-black">Send</button>
+        <div class="p-8 border-t border-zinc-50 bg-white">
+            <div class="flex gap-4 items-center">
+                <input type="text" id="chat-input" placeholder="Message..." class="flex-1 text-[12px] outline-none placeholder:text-zinc-300 font-light">
+                <button onclick="sendChatMessage()" class="text-[10px] font-bold uppercase tracking-widest text-black hover:text-zinc-400 transition">Send</button>
             </div>
         </div>
     </div>
@@ -203,6 +232,17 @@
     <script>
         let currentUser = JSON.parse(localStorage.getItem('mws_user')) || null;
         let allProducts = [];
+
+        // 🔍 新增：搜索过滤逻辑 (对接 allProducts)
+        document.getElementById('main-search-input').addEventListener('input', (e) => {
+            const keyword = e.target.value.toLowerCase().trim();
+            if(!keyword) { renderGrid(allProducts); return; }
+            const filtered = allProducts.filter(p => 
+                p.name.toLowerCase().includes(keyword) || 
+                p.category.toLowerCase().includes(keyword)
+            );
+            renderGrid(filtered);
+        });
 
         function handleUserClick() {
             if (currentUser) { window.location.href = 'account.html'; } else { openAuth(); }
@@ -222,11 +262,8 @@
         function toggleAuth(mode) {
             const lForm = document.getElementById('login-form');
             const rForm = document.getElementById('register-form');
-            if (mode === 'reg') {
-                lForm.classList.add('hidden'); rForm.classList.remove('hidden');
-            } else {
-                lForm.classList.remove('hidden'); rForm.classList.add('hidden');
-            }
+            if (mode === 'reg') { lForm.classList.add('hidden'); rForm.classList.remove('hidden'); } 
+            else { lForm.classList.remove('hidden'); rForm.classList.add('hidden'); }
         }
 
         async function loadProducts() {
@@ -245,9 +282,9 @@
                         <img src="${item.image}" class="w-full h-full object-cover transition-transform duration-[3s] group-hover:scale-110">
                     </div>
                     <div class="text-center">
-                        <h4 class="text-[9px] uppercase tracking-[0.3em] font-bold text-zinc-300 mb-2">${item.category}</h4>
-                        <h2 class="text-[12px] uppercase tracking-[0.15em] font-medium mb-2">${item.name}</h2>
-                        <p class="text-[11px] font-light text-zinc-400">¥ ${item.price}</p>
+                        <h4 class="text-[9px] uppercase tracking-[0.4em] font-bold text-zinc-300 mb-3">${item.category}</h4>
+                        <h2 class="text-[13px] uppercase tracking-[0.15em] font-medium mb-3">${item.name}</h2>
+                        <p class="text-[12px] font-light text-zinc-400">¥ ${item.price}</p>
                     </div>
                 </a>
             `).join('');
@@ -261,7 +298,6 @@
             renderGrid(filtered);
         }
 
-        // 核心配置同步
         async function applyLiveSettings() {
             try {
                 const res = await fetch('/api/settings');
@@ -281,7 +317,6 @@
         function openAuth() { document.getElementById('auth-modal').style.display = 'flex'; }
         function closeAuth() { document.getElementById('auth-modal').style.display = 'none'; }
 
-        // 登录/注册/聊天逻辑与你之前提供的一致，确保功能完整...
         async function handleLogin() {
             const email = document.getElementById('l-email').value;
             const pass = document.getElementById('l-pass').value;
@@ -310,15 +345,11 @@
                     body: JSON.stringify({ nickname, email, pass })
                 });
                 const data = await res.json();
-                if (data.success) { alert("注册成功"); toggleAuth('login'); }
-                else { alert("注册失败"); }
+                if (data.success) { alert("注册成功"); toggleAuth('login'); } else { alert("注册失败"); }
             } catch (err) { console.error(err); }
         }
 
-        function toggleChat() {
-            const win = document.getElementById('chat-window');
-            win.classList.toggle('hidden'); win.classList.toggle('flex');
-        }
+        function toggleChat() { document.getElementById('chat-window').classList.toggle('hidden'); document.getElementById('chat-window').classList.toggle('flex'); }
 
         async function sendChatMessage() {
             const input = document.getElementById('chat-input');
@@ -327,7 +358,7 @@
             if (!text) return;
             const email = currentUser ? currentUser.email : 'Guest';
             msgArea.innerHTML += `<div class="flex flex-col items-end w-full animate__animated animate__fadeInRight animate__faster">
-                <div class="bg-black text-white p-4 rounded-3xl rounded-tr-none text-[11px] mb-2">${text}</div>
+                <div class="bg-black text-white p-5 rounded-[2rem] rounded-tr-none text-[12px] mb-3">${text}</div>
             </div>`;
             input.value = ''; msgArea.scrollTop = msgArea.scrollHeight;
             await fetch('/api/messages/send', {
