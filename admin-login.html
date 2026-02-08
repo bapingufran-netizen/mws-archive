@@ -8,192 +8,75 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400&family=Inter:wght@200;300&display=swap');
-
-        :root {
-            --mws-black: #000000;
-            --mws-white: #ffffff;
-            --mws-gray: #f2f2f2;
-        }
-
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: var(--mws-white); 
-            color: var(--mws-black);
-            overflow: hidden;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* 背景艺术效果：极淡的装饰线条 */
-        .bg-line {
-            position: absolute;
-            background: #000;
-            opacity: 0.03;
-            z-index: 0;
-        }
-
-        .login-card {
-            width: 100%;
-            max-width: 450px;
-            padding: 80px 60px;
-            background: #fff;
-            position: relative;
-            z-index: 10;
-            text-align: center;
-        }
-
-        .logo-area {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 20px;
-            font-weight: 200;
-            letter-spacing: 0.8em;
-            text-transform: uppercase;
-            margin-bottom: 60px;
-            margin-left: 0.8em;
-        }
-
-        .input-group {
-            position: relative;
-            margin-bottom: 40px;
-            text-align: left;
-        }
-
-        .input-group label {
-            font-size: 9px;
-            font-weight: 700;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            color: #ccc;
-            display: block;
-            margin-bottom: 10px;
-            margin-left: 2px;
-        }
-
-        .mws-input {
-            width: 100%;
-            border: none;
-            border-bottom: 1px solid #e5e5e5;
-            padding: 12px 2px;
-            font-size: 13px;
-            font-weight: 300;
-            letter-spacing: 0.1em;
-            outline: none;
-            transition: border-color 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-        }
-
-        .mws-input:focus {
-            border-color: var(--mws-black);
-        }
-
-        .btn-login {
-            width: 100%;
-            background: var(--mws-black);
-            color: var(--mws-white);
-            padding: 20px;
-            font-size: 11px;
-            font-weight: 400;
-            letter-spacing: 0.5em;
-            text-transform: uppercase;
-            margin-top: 30px;
-            transition: all 0.4s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-login:hover {
-            opacity: 0.8;
-            letter-spacing: 0.6em;
-        }
-
-        .back-home {
-            margin-top: 40px;
-            font-size: 10px;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            color: #aaa;
-            text-decoration: none;
-            display: inline-block;
-            transition: 0.3s;
-        }
-
-        .back-home:hover {
-            color: #000;
-        }
-
-        /* 响应式适配 */
-        @media (max-width: 640px) {
-            .login-card { padding: 60px 30px; }
-        }
+        :root { --mws-black: #000000; --mws-white: #ffffff; --mws-gray: #f2f2f2; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--mws-white); color: var(--mws-black); overflow: hidden; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .bg-line { position: absolute; background: #000; opacity: 0.03; z-index: 0; }
+        .login-card { width: 100%; max-width: 450px; padding: 80px 60px; background: #fff; position: relative; z-index: 10; text-align: center; }
+        .logo-area { font-family: 'Montserrat', sans-serif; font-size: 20px; font-weight: 200; letter-spacing: 0.8em; text-transform: uppercase; margin-bottom: 60px; margin-left: 0.8em; }
+        .input-group { position: relative; margin-bottom: 40px; text-align: left; }
+        .input-group label { font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #ccc; display: block; margin-bottom: 10px; margin-left: 2px; }
+        .mws-input { width: 100%; border: none; border-bottom: 1px solid #e5e5e5; padding: 12px 2px; font-size: 13px; font-weight: 300; letter-spacing: 0.1em; outline: none; transition: border-color 0.5s cubic-bezier(0.19, 1, 0.22, 1); }
+        .mws-input:focus { border-color: var(--mws-black); }
+        .btn-login { width: 100%; background: var(--mws-black); color: var(--mws-white); padding: 20px; font-size: 11px; font-weight: 400; letter-spacing: 0.5em; text-transform: uppercase; margin-top: 30px; transition: all 0.4s; position: relative; overflow: hidden; }
+        .btn-login:hover { opacity: 0.8; letter-spacing: 0.6em; }
+        .back-home { margin-top: 40px; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: #aaa; text-decoration: none; display: inline-block; transition: 0.3s; }
+        .back-home:hover { color: #000; }
     </style>
 </head>
 <body>
-
     <div class="bg-line w-[1px] h-full left-[20%]"></div>
     <div class="bg-line w-full h-[1px] top-[40%]"></div>
 
     <main class="login-card animate__animated animate__fadeIn">
         <div class="logo-area">MWS Studio</div>
-
         <div class="space-y-2">
             <div class="input-group">
                 <label>Administrator / 账号</label>
-                <input type="text" id="admin-user" class="mws-input" placeholder="USERNAME" autocomplete="off">
+                <input type="text" id="admin-user" class="mws-input" placeholder="admin" autocomplete="off">
             </div>
-            
             <div class="input-group">
                 <label>Security Key / 密钥</label>
                 <input type="password" id="admin-pass" class="mws-input" placeholder="PASSWORD">
             </div>
-
-            <button onclick="handleAdminLogin()" class="btn-login">
-                Verify & Enter
-            </button>
+            <button onclick="handleAdminLogin()" class="btn-login">Verify & Enter</button>
         </div>
-
         <a href="index.html" class="back-home">← Back to Archive / 返回陈列馆</a>
     </main>
 
     <script>
         async function handleAdminLogin() {
-            const user = document.getElementById('admin-user').value;
-            const pass = document.getElementById('admin-pass').value;
+            const user = document.getElementById('admin-user').value.trim();
+            const password = document.getElementById('admin-pass').value;
 
-            if (!user || !pass) {
+            if (!user || !password) {
                 alert("请填写完整的管理凭证");
                 return;
             }
 
             try {
+                // 这里的 email 对应你 server.js 第114行的变量
+                // 这里的 pass 对应你 server.js 第114行的变量
                 const res = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    // 将字段名统一，确保后端能识别
-                    body: JSON.stringify({ 
-                        username: user, 
-                        email: user, 
-                        pass: pass, 
-                        password: pass 
-                    })
+                    body: JSON.stringify({ email: user, pass: password })
                 });
                 
                 const data = await res.json();
                 
-                // 只要后端返回 success 为 true 即可登录，不再死磕 role === 'admin' 字符串
-                if (data.success) {
+                // 只要后端返回 success 并且 role 是 admin 就放行
+                if (data.success && data.user && data.user.role === 'admin') {
                     localStorage.setItem('mws_user', JSON.stringify(data.user));
-                    
                     document.querySelector('.login-card').classList.add('animate__animated', 'animate__fadeOutUp');
                     setTimeout(() => {
                         window.location.href = 'admin-console.html'; 
                     }, 500);
                 } else {
-                    alert(data.message || "权限不足或密码错误 / ACCESS DENIED");
+                    alert(data.msg || "权限不足或密码错误 / ACCESS DENIED");
                 }
             } catch (err) {
                 console.error("认证异常", err);
-                alert("系统连接异常，请检查后端状态");
+                alert("系统连接异常，请检查后端是否启动");
             }
         }
 
