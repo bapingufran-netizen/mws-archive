@@ -52,27 +52,47 @@
         const userInput = document.getElementById('admin-user');
         const passInput = document.getElementById('admin-pass');
 
-        // 最终修复：点击按钮直接跳转（完全绕过验证）
-        function handleAdminLogin() {
-            // 存储登录状态（确保后台页面识别）
-            localStorage.setItem('mws_user', JSON.stringify({
-                email: 'admin',
-                nickname: '超级管理员',
-                role: 'admin'
-            }));
-            // 执行跳转（保留原有动画）
-            document.querySelector('.login-card').classList.add('animate__animated', 'animate__fadeOutUp');
-            setTimeout(() => {
-                window.location.href = 'admin-console.html';
-            }, 500);
+        async function handleAdminLogin() {
+            const user = userInput.value.trim();
+            const password = passInput.value;
+
+            errorTip.textContent = '';
+            if (!user) {
+                errorTip.textContent = '请输入管理员账号';
+                userInput.focus();
+                return;
+            }
+            if (!password) {
+                errorTip.textContent = '请输入安全密钥';
+                passInput.focus();
+                return;
+            }
+
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Verifying...';
+
+            // 适配当前目录结构的跳转逻辑
+            try {
+                // 1. 存储登录状态（确保后台页识别）
+                localStorage.setItem('mws_user', JSON.stringify({
+                    email: 'admin',
+                    role: 'admin'
+                }));
+                // 2. 直接跳转（同一目录下的admin-console.html）
+                window.location.href = './admin-console.html';
+            } catch (err) {
+                // 兜底：强制替换路径跳转
+                window.location.replace('./admin-console.html');
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Verify & Enter';
+            }
         }
 
-        // 回车登录
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') handleAdminLogin();
+            if (e.key === 'Enter' && !loginBtn.disabled) handleAdminLogin();
         });
 
-        // 页面加载填充默认账号
         window.onload = () => {
             if (!userInput.value) userInput.value = 'admin';
         };
