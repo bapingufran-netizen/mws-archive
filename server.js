@@ -135,43 +135,56 @@ app.post('/api/register', async (req, res) => {
 });
 
 
-// 2. 真实登录 - 修复：兼容无role字段+自动创建admin账号
+// 2. 真实登录 - 最终修复版：确保admin账号必创建+role必返回admin
 app.post('/api/login', async (req, res) => {
     const { email, pass } = req.body;
     try {
-        // 修复点1：先检查并创建admin账号（仅当email为admin且不存在时）
-        if (email === 'admin') {
-            const adminCheck = await pool.query("SELECT id FROM users WHERE email = $1", ['admin']);
-            if (adminCheck.rows.length === 0) {
-                // 给users表添加role字段（无则新增）
-                await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'user'`);
-                // 创建admin账号，密码：mwsadmin123
-                const hashedPwd = await bcrypt.hash('mwsadmin123', 10);
-                await pool.query(
-                    "INSERT INTO users (nickname, email, password, role) VALUES ($1, $2, $3, $4)",
-                    ['超级管理员', 'admin', hashedPwd, 'admin']
-                );
-            }
+        // 核心修复1：强制检查并创建admin账号（不管email是否为admin，先确保admin账号存在）
+        const adminCheck = await pool.query("SELECT id FROM users WHERE email = $1", ['admin']);
+        if (adminCheck.rows.length === 0) {
+            // 确保role字段存在
+            await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'user'`);
+            // 固定admin密码：mwsadmin123
+            const hashedPwd = await bcrypt.hash('mwsadmin123', 10);
+            await pool.query(
+                "INSERT INTO users (nickname, email, password, role) VALUES ($1, $2, $3, $4)",
+                ['超级管理员', 'admin', hashedPwd, 'admin']
+            );
         }
 
-        // 原有登录逻辑
+        // 原有登录逻辑（保留）
         const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
         const user = result.rows[0];
         if (!user) return res.json({ success: false, msg: "账号不存在" });
 
-        const isMatch = await bcrypt.compare(pass, user.password);
+        // 核心修复2：兼容bcrypt/bcryptjs（避免加密库不匹配导致验证失败）
+        let isMatch = false;
+        try {
+            isMatch = await bcrypt.compare(pass, user.password);
+        } catch (e) {
+            // 备用：如果bcrypt验证失败，尝试bcryptjs（防止库不一致）
+            isMatch = await bcryptjs.compare(pass, user.password);
+        }
         if (!isMatch) return res.json({ success: false, msg: "密码错误" });
 
         delete user.password;
 
-        // ✨ 关键修改：如果账号名是 admin，强制给它 admin 权限
-        if (email === 'admin' || user.role === 'admin') {
+        // 核心修复3：强制给admin账号赋值role=admin，确保前端能拿到
+        if (email === 'admin') {
             user.role = 'admin'; 
+        } else {
+            user.role = user.role || 'user';
         }
 
-        res.json({ success: true, user: user });
+        // 核心修复4：返回结构明确，确保success=true + user.role=admin
+        res.json({ 
+            success: true, 
+            user: user,
+            msg: "登录成功" 
+        });
     } catch (err) {
-        res.status(500).json({ success: false, msg: "登录异常" });
+        console.error("登录报错详情:", err); // 新增：打印具体错误，方便排查
+        res.status(500).json({ success: false, msg: "登录异常：" + err.message });
     }
 });
 
@@ -242,3 +255,4 @@ const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
     console.log(`🚀 M.W.S 系统在线 (认证增强版) | 端口: ${PORT}`);
 });
+
