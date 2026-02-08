@@ -8,10 +8,19 @@
     <style>
         :root {
             --primary-blue: #3b82f6;
+            --primary-hover: #2563eb;
             --bg-dark: #0f172a;
             --card-bg: #1e293b;
             --text-main: #f8fafc;
             --text-dim: #94a3b8;
+            --input-bg: #0f172a;
+            --error-red: #ef4444;
+        }
+
+        /* 简单的渐变入场动画 */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         body {
@@ -22,50 +31,64 @@
             align-items: center;
             min-height: 100vh;
             background-color: var(--bg-dark);
-            font-family: 'Inter', -apple-system, sans-serif;
+            /* 添加一个深色的径向渐变，增加深度感 */
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
             color: var(--text-main);
+            overflow: hidden;
         }
 
         .login-container {
             width: 100%;
             max-width: 420px;
             padding: 20px;
+            animation: fadeInDown 0.6s ease-out;
         }
 
         .login-card {
             background: var(--card-bg);
             padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px; /* 稍微圆润一点更现代 */
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .login-card:hover {
+            border-color: rgba(59, 130, 246, 0.3);
         }
 
         .brand-header {
             text-align: center;
-            margin-bottom: 32px;
+            margin-bottom: 35px;
         }
 
         .brand-header h1 {
-            font-size: 24px;
+            font-size: 28px;
+            font-weight: 800;
             margin: 0;
-            letter-spacing: -0.5px;
+            letter-spacing: -1px;
+            background: linear-gradient(to right, #fff, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .brand-header p {
             color: var(--text-dim);
             font-size: 14px;
-            margin-top: 8px;
+            margin-top: 10px;
+            font-weight: 400;
         }
 
         .input-group {
-            margin-bottom: 20px;
-            position: relative;
+            margin-bottom: 24px;
         }
 
         .input-group label {
             display: block;
             margin-bottom: 8px;
             font-size: 13px;
+            font-weight: 500;
             color: var(--text-dim);
         }
 
@@ -73,72 +96,104 @@
             position: relative;
         }
 
-        .input-wrapper i {
+        /* 优化图标定位 */
+        .input-wrapper i.prefix-icon {
             position: absolute;
-            left: 12px;
+            left: 14px;
             top: 50%;
             transform: translateY(-50%);
             color: var(--text-dim);
+            transition: color 0.2s;
+            pointer-events: none;
         }
 
         .input-wrapper input {
             width: 100%;
-            padding: 12px 12px 12px 40px;
-            background: #0f172a;
+            padding: 14px 14px 14px 44px;
+            background: var(--input-bg);
             border: 1px solid #334155;
-            border-radius: 8px;
+            border-radius: 10px;
             color: white;
+            font-size: 15px;
             box-sizing: border-box;
-            transition: all 0.2s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
+        /* Focus 状态下，图标也跟着变色 */
         .input-wrapper input:focus {
             outline: none;
             border-color: var(--primary-blue);
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        .input-wrapper input:focus + i.prefix-icon {
+            color: var(--primary-blue);
         }
 
         .toggle-password {
             position: absolute;
-            right: 12px;
+            right: 14px;
             top: 50%;
             transform: translateY(-50%);
             cursor: pointer;
             color: var(--text-dim);
+            padding: 5px;
+            transition: color 0.2s;
+        }
+
+        .toggle-password:hover {
+            color: var(--text-main);
         }
 
         .login-btn {
             width: 100%;
-            padding: 12px;
+            padding: 14px;
             background: var(--primary-blue);
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 15px;
+            border-radius: 10px;
+            font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s;
             margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
 
         .login-btn:hover {
-            background: #2563eb;
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
         }
 
         .login-btn:disabled {
             background: #475569;
+            box-shadow: none;
             cursor: not-allowed;
         }
 
         .error-msg {
-            background: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
-            padding: 10px;
-            border-radius: 6px;
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--error-red);
+            padding: 12px;
+            border-radius: 8px;
             font-size: 13px;
             margin-bottom: 20px;
-            display: none; /* 默认隐藏 */
+            display: none;
             text-align: center;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            animation: shake 0.4s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
         }
     </style>
 </head>
@@ -155,76 +210,29 @@
             <i class="fas fa-exclamation-circle"></i> <span>用户名或密码错误</span>
         </div>
 
-        <form id="loginForm">
+        <form id="loginForm" autocomplete="off">
             <div class="input-group">
                 <label for="username">管理员账号</label>
                 <div class="input-wrapper">
-                    <i class="fas fa-user"></i>
                     <input type="text" id="username" placeholder="请输入 ID" required>
+                    <i class="fas fa-user prefix-icon"></i>
                 </div>
             </div>
 
             <div class="input-group">
                 <label for="password">安全密码</label>
                 <div class="input-wrapper">
-                    <i class="fas fa-lock"></i>
                     <input type="password" id="password" placeholder="请输入密码" required>
+                    <i class="fas fa-lock prefix-icon"></i>
                     <i class="fas fa-eye toggle-password" id="eyeIcon"></i>
                 </div>
             </div>
 
-            <button type="submit" class="login-btn" id="submitBtn">登录系统</button>
+            <button type="submit" class="login-btn" id="submitBtn">登 录 系 统</button>
         </form>
     </div>
 </div>
 
 <script>
     const loginForm = document.getElementById('loginForm');
-    const eyeIcon = document.getElementById('eyeIcon');
-    const passwordInput = document.getElementById('password');
-    const errorMsg = document.getElementById('errorMessage');
-
-    // 1. 切换密码可见性
-    eyeIcon.addEventListener('click', () => {
-        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-        passwordInput.setAttribute('type', type);
-        eyeIcon.classList.toggle('fa-eye');
-        eyeIcon.classList.toggle('fa-eye-slash');
-    });
-
-    // 2. 登录逻辑处理
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('submitBtn');
-        const user = document.getElementById('username').value;
-        const pass = document.getElementById('password').value;
-
-        // 锁定按钮防止重复提交
-        btn.disabled = true;
-        btn.innerText = '正在验证...';
-        errorMsg.style.display = 'none';
-
-        try {
-            /** * 这里后续需要对接你的真实 API
-             * 目前作为示例，假设正确账号为 admin，密码为 123456
-             **/
-            if (user === 'admin' && pass === '123456') {
-                // 模拟 API 返回成功并存储 token
-                localStorage.setItem('mws_auth_status', 'authorized');
-                localStorage.setItem('login_time', Date.now());
-                
-                // 跳转到你提供的那个管理后台页面
-                window.location.href = 'admin-console.html';
-            } else {
-                throw new Error('鉴权失败');
-            }
-        } catch (err) {
-            errorMsg.style.display = 'block';
-            btn.disabled = false;
-            btn.innerText = '登录系统';
-        }
-    });
-</script>
-
-</body>
-</html>
+    const eyeIcon = document.
