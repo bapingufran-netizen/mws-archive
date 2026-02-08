@@ -1,273 +1,202 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理员登录 - MWS Archive</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>MWS ARCHIVE | 管理员认证</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400&family=Inter:wght@200;300&display=swap');
+
         :root {
-            --primary-blue: #3b82f6;
-            --primary-hover: #2563eb;
-            --bg-dark: #0f172a;
-            --card-bg: #1e293b;
-            --text-main: #f8fafc;
-            --text-dim: #94a3b8;
-            --input-bg: #0f172a;
-            --error-red: #ef4444;
+            --mws-black: #000000;
+            --mws-white: #ffffff;
+            --mws-gray: #f2f2f2;
         }
 
-        /* 入场动画 */
-        @keyframes fadeInDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* 抖动动画（登录失败时触发） */
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-6px); }
-            75% { transform: translateX(6px); }
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-color: var(--bg-dark);
-            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
-            font-family: 'Inter', -apple-system, system-ui, sans-serif;
-            color: var(--text-main);
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--mws-white); 
+            color: var(--mws-black);
             overflow: hidden;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .login-container {
-            width: 100%;
-            max-width: 420px;
-            padding: 20px;
-            animation: fadeInDown 0.6s ease-out;
+        /* 背景艺术效果：极淡的装饰线条 */
+        .bg-line {
+            position: absolute;
+            background: #000;
+            opacity: 0.03;
+            z-index: 0;
         }
 
         .login-card {
-            background: var(--card-bg);
-            padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            transition: border-color 0.3s ease;
-        }
-
-        .brand-header {
+            width: 100%;
+            max-width: 450px;
+            padding: 80px 60px;
+            background: #fff;
+            position: relative;
+            z-index: 10;
             text-align: center;
-            margin-bottom: 35px;
         }
 
-        .brand-header h1 {
-            font-size: 28px;
-            font-weight: 800;
-            margin: 0;
-            letter-spacing: -1px;
-            background: linear-gradient(to right, #fff, #3b82f6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .brand-header p {
-            color: var(--text-dim);
-            font-size: 14px;
-            margin-top: 10px;
+        .logo-area {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 20px;
+            font-weight: 200;
+            letter-spacing: 0.8em;
+            text-transform: uppercase;
+            margin-bottom: 60px;
+            margin-left: 0.8em;
         }
 
         .input-group {
-            margin-bottom: 24px;
+            position: relative;
+            margin-bottom: 40px;
+            text-align: left;
         }
 
         .input-group label {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #ccc;
             display: block;
-            margin-bottom: 8px;
-            font-size: 13px;
-            color: var(--text-dim);
+            margin-bottom: 10px;
+            margin-left: 2px;
         }
 
-        .input-wrapper {
-            position: relative;
-        }
-
-        .input-wrapper i.prefix-icon {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-dim);
-            transition: color 0.2s;
-            pointer-events: none;
-        }
-
-        .input-wrapper input {
+        .mws-input {
             width: 100%;
-            padding: 14px 14px 14px 44px;
-            background: var(--input-bg);
-            border: 1px solid #334155;
-            border-radius: 10px;
-            color: white;
-            font-size: 15px;
-            box-sizing: border-box;
-            transition: all 0.2s ease;
-        }
-
-        .input-wrapper input:focus {
-            outline: none;
-            border-color: var(--primary-blue);
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
-        }
-
-        .input-wrapper input:focus + i.prefix-icon {
-            color: var(--primary-blue);
-        }
-
-        .toggle-password {
-            position: absolute;
-            right: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-            color: var(--text-dim);
-            padding: 5px;
-            transition: color 0.2s;
-        }
-
-        .toggle-password:hover {
-            color: var(--text-main);
-        }
-
-        .login-btn {
-            width: 100%;
-            padding: 14px;
-            background: var(--primary-blue);
-            color: white;
             border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 10px;
-        }
-
-        .login-btn:hover {
-            background: var(--primary-hover);
-            transform: translateY(-1px);
-        }
-
-        .login-btn:disabled {
-            background: #475569;
-            cursor: not-allowed;
-        }
-
-        .error-msg {
-            background: rgba(239, 68, 68, 0.15);
-            color: var(--error-red);
-            padding: 12px;
-            border-radius: 8px;
+            border-bottom: 1px solid #e5e5e5;
+            padding: 12px 2px;
             font-size: 13px;
-            margin-bottom: 20px;
-            display: none;
-            text-align: center;
-            border: 1px solid rgba(239, 68, 68, 0.2);
+            font-weight: 300;
+            letter-spacing: 0.1em;
+            outline: none;
+            transition: border-color 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .mws-input:focus {
+            border-color: var(--mws-black);
+        }
+
+        .btn-login {
+            width: 100%;
+            background: var(--mws-black);
+            color: var(--mws-white);
+            padding: 20px;
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: 0.5em;
+            text-transform: uppercase;
+            margin-top: 30px;
+            transition: all 0.4s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-login:hover {
+            opacity: 0.8;
+            letter-spacing: 0.6em;
+        }
+
+        .back-home {
+            margin-top: 40px;
+            font-size: 10px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #aaa;
+            text-decoration: none;
+            display: inline-block;
+            transition: 0.3s;
+        }
+
+        .back-home:hover {
+            color: #000;
+        }
+
+        /* 响应式适配 */
+        @media (max-width: 640px) {
+            .login-card { padding: 60px 30px; }
         }
     </style>
 </head>
 <body>
 
-<div class="login-container">
-    <div class="login-card">
-        <div class="brand-header">
-            <h1>MWS Archive</h1>
-            <p>Admin Management Console</p>
-        </div>
+    <div class="bg-line w-[1px] h-full left-[20%]"></div>
+    <div class="bg-line w-full h-[1px] top-[40%]"></div>
 
-        <div id="errorMessage" class="error-msg">
-            <i class="fas fa-exclamation-circle"></i> <span>用户名或密码错误</span>
-        </div>
+    <main class="login-card animate__animated animate__fadeIn">
+        <div class="logo-area">MWS Studio</div>
 
-        <form id="loginForm" autocomplete="off">
+        <div class="space-y-2">
             <div class="input-group">
-                <label for="username">管理员账号</label>
-                <div class="input-wrapper">
-                    <input type="text" id="username" placeholder="请输入 ID" required>
-                    <i class="fas fa-user prefix-icon"></i>
-                </div>
+                <label>Administrator / 账号</label>
+                <input type="text" id="admin-user" class="mws-input" placeholder="USERNAME" autocomplete="off">
+            </div>
+            
+            <div class="input-group">
+                <label>Security Key / 密钥</label>
+                <input type="password" id="admin-pass" class="mws-input" placeholder="PASSWORD">
             </div>
 
-            <div class="input-group">
-                <label for="password">安全密码</label>
-                <div class="input-wrapper">
-                    <input type="password" id="password" placeholder="请输入密码" required>
-                    <i class="fas fa-lock prefix-icon"></i>
-                    <i class="fas fa-eye toggle-password" id="eyeIcon"></i>
-                </div>
-            </div>
+            <button onclick="handleAdminLogin()" class="btn-login">
+                Verify & Enter
+            </button>
+        </div>
 
-            <button type="submit" class="login-btn" id="submitBtn">登 录 系 统</button>
-        </form>
-    </div>
-</div>
+        <a href="index.html" class="back-home">← Back to Archive / 返回陈列馆</a>
+    </main>
 
-<script>
-    const loginForm = document.getElementById('loginForm');
-    const eyeIcon = document.getElementById('eyeIcon');
-    const passwordInput = document.getElementById('password');
-    const errorMsg = document.getElementById('errorMessage');
-    const btn = document.getElementById('submitBtn');
+    <script>
+        // 保持你原有的逻辑，仅优化交互反馈
+        async function handleAdminLogin() {
+            const user = document.getElementById('admin-user').value;
+            const pass = document.getElementById('admin-pass').value;
 
-    // 1. 切换密码可见性逻辑
-    eyeIcon.addEventListener('click', () => {
-        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-        passwordInput.setAttribute('type', type);
-        eyeIcon.classList.toggle('fa-eye');
-        eyeIcon.classList.toggle('fa-eye-slash');
-    });
-
-    // 2. 登录逻辑处理
-    loginForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-
-        const user = document.getElementById('username').value;
-        const pass = document.getElementById('password').value;
-
-        // UI 反馈
-        btn.disabled = true;
-        btn.innerText = '正在验证...';
-        errorMsg.style.display = 'none';
-
-        // 模拟网络请求延迟
-        setTimeout(() => {
-            if (user === 'admin' && pass === '123456') {
-                // 存储认证状态
-                localStorage.setItem('mws_auth_status', 'authorized');
-                localStorage.setItem('login_time', Date.now());
-                
-                // 登录成功跳转
-                window.location.href = 'admin-console.html';
-            } else {
-                // 登录失败处理
-                errorMsg.style.display = 'block';
-                btn.disabled = false;
-                btn.innerText = '登 录 系 统';
-                
-                // 触发抖动动画
-                const card = document.querySelector('.login-card');
-                card.style.animation = 'none';
-                // 强制重绘触发动画
-                void card.offsetWidth; 
-                card.style.animation = 'shake 0.4s ease-in-out';
+            if (!user || !pass) {
+                alert("请填写完整的管理凭证");
+                return;
             }
-        }, 600);
-    });
-</script>
 
+            // 这里对接你原本的 server.js 登录逻辑
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: user, pass: pass })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success && data.user.role === 'admin') {
+                    // 存储管理员状态
+                    localStorage.setItem('mws_user', JSON.stringify(data.user));
+                    // 成功动效
+                    document.querySelector('.login-card').classList.add('animate__fadeOutUp');
+                    setTimeout(() => {
+                        window.location.href = 'admin-console.html'; 
+                    }, 500);
+                } else {
+                    alert("权限不足或密码错误 / ACCESS DENIED");
+                }
+            } catch (err) {
+                console.error("认证异常", err);
+                alert("系统连接异常，请检查后端状态");
+            }
+        }
+
+        // 监听回车
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleAdminLogin();
+        });
+    </script>
 </body>
 </html>
