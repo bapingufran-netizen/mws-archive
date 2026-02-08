@@ -120,10 +120,10 @@ app.post('/api/register', async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(pass, 10);
         
-        // 执行插入
+        // 执行插入 - 修复：补充role字段
         await pool.query(
-            "INSERT INTO users (nickname, email, password) VALUES ($1, $2, $3)",
-            [nickname, email, hashedPassword]
+            "INSERT INTO users (nickname, email, password, role) VALUES ($1, $2, $3, $4)",
+            [nickname, email, hashedPassword, 'user']
         );
 
         res.json({ success: true, msg: "注册成功" });
@@ -135,10 +135,26 @@ app.post('/api/register', async (req, res) => {
 });
 
 
-// 2. 真实登录
+// 2. 真实登录 - 修复：兼容无role字段+自动创建admin账号
 app.post('/api/login', async (req, res) => {
     const { email, pass } = req.body;
     try {
+        // 修复点1：先检查并创建admin账号（仅当email为admin且不存在时）
+        if (email === 'admin') {
+            const adminCheck = await pool.query("SELECT id FROM users WHERE email = $1", ['admin']);
+            if (adminCheck.rows.length === 0) {
+                // 给users表添加role字段（无则新增）
+                await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'user'`);
+                // 创建admin账号，密码：mwsadmin123
+                const hashedPwd = await bcrypt.hash('mwsadmin123', 10);
+                await pool.query(
+                    "INSERT INTO users (nickname, email, password, role) VALUES ($1, $2, $3, $4)",
+                    ['超级管理员', 'admin', hashedPwd, 'admin']
+                );
+            }
+        }
+
+        // 原有登录逻辑
         const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
         const user = result.rows[0];
         if (!user) return res.json({ success: false, msg: "账号不存在" });
@@ -226,8 +242,3 @@ const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
     console.log(`🚀 M.W.S 系统在线 (认证增强版) | 端口: ${PORT}`);
 });
-
-
-
-
-
