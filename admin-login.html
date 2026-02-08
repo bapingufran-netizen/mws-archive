@@ -76,8 +76,26 @@
             loginBtn.disabled = true;
             loginBtn.textContent = 'Verifying...';
 
+            // ✅ 核心调整：优先判断admin账号密码，直接跳转（绕过接口依赖）
+            if (user === 'admin' && password === 'mwsadmin123') {
+                // 存储用户信息
+                localStorage.setItem('mws_user', JSON.stringify({
+                    email: 'admin',
+                    nickname: '超级管理员',
+                    role: 'admin'
+                }));
+                // 跳转后台（保留原有动画）
+                document.querySelector('.login-card').classList.add('animate__animated', 'animate__fadeOutUp');
+                setTimeout(() => {
+                    window.location.href = 'admin-console.html';
+                }, 500);
+                // 重置按钮（防止状态异常）
+                resetLoginBtn();
+                return; // 直接终止函数，无需请求接口
+            }
+
+            // 非admin账号仍走原有接口逻辑（保留）
             try {
-                // 发送登录请求
                 const baseUrl = window.location.origin;
                 const res = await fetch(`${baseUrl}/api/login`, {
                     method: 'POST',
@@ -89,18 +107,10 @@
                 if (!res.ok) throw new Error(`HTTP错误: ${res.status}`);
                 const data = await res.json();
 
-                // ✅ 严格判断 + 兜底逻辑
-                const isAdminValid = user === 'admin' && password === 'mwsadmin123';
                 const isLoginSuccess = data && typeof data === 'object' && data.success === true && data.user && data.user.role === 'admin';
 
-                if (isLoginSuccess || isAdminValid) {
-                    // 存储用户信息
-                    localStorage.setItem('mws_user', JSON.stringify({
-                        email: 'admin',
-                        nickname: '超级管理员',
-                        role: 'admin'
-                    }));
-                    // 跳转后台
+                if (isLoginSuccess) {
+                    localStorage.setItem('mws_user', JSON.stringify(data.user));
                     document.querySelector('.login-card').classList.add('animate__animated', 'animate__fadeOutUp');
                     setTimeout(() => {
                         window.location.href = 'admin-console.html';
@@ -112,14 +122,8 @@
 
             } catch (err) {
                 console.error('登录异常：', err);
-                // 离线兜底：正确密码直接登录
-                if (user === 'admin' && password === 'mwsadmin123') {
-                    localStorage.setItem('mws_user', JSON.stringify({ email: 'admin', role: 'admin' }));
-                    window.location.href = 'admin-console.html';
-                } else {
-                    errorTip.textContent = '无法连接服务器 / Cannot connect to server';
-                    resetLoginBtn();
-                }
+                errorTip.textContent = '无法连接服务器 / Cannot connect to server';
+                resetLoginBtn();
             }
         }
 
