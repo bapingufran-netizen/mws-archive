@@ -17,10 +17,17 @@
             --error-red: #ef4444;
         }
 
-        /* 简单的渐变入场动画 */
+        /* 入场动画 */
         @keyframes fadeInDown {
             from { opacity: 0; transform: translateY(-20px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 抖动动画（登录失败时触发） */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
         }
 
         body {
@@ -31,7 +38,6 @@
             align-items: center;
             min-height: 100vh;
             background-color: var(--bg-dark);
-            /* 添加一个深色的径向渐变，增加深度感 */
             background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
             font-family: 'Inter', -apple-system, system-ui, sans-serif;
             color: var(--text-main);
@@ -48,14 +54,10 @@
         .login-card {
             background: var(--card-bg);
             padding: 40px;
-            border-radius: 16px; /* 稍微圆润一点更现代 */
+            border-radius: 16px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            transition: transform 0.3s ease;
-        }
-
-        .login-card:hover {
-            border-color: rgba(59, 130, 246, 0.3);
+            transition: border-color 0.3s ease;
         }
 
         .brand-header {
@@ -77,7 +79,6 @@
             color: var(--text-dim);
             font-size: 14px;
             margin-top: 10px;
-            font-weight: 400;
         }
 
         .input-group {
@@ -88,7 +89,6 @@
             display: block;
             margin-bottom: 8px;
             font-size: 13px;
-            font-weight: 500;
             color: var(--text-dim);
         }
 
@@ -96,7 +96,6 @@
             position: relative;
         }
 
-        /* 优化图标定位 */
         .input-wrapper i.prefix-icon {
             position: absolute;
             left: 14px;
@@ -116,15 +115,13 @@
             color: white;
             font-size: 15px;
             box-sizing: border-box;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s ease;
         }
 
-        /* Focus 状态下，图标也跟着变色 */
         .input-wrapper input:focus {
             outline: none;
             border-color: var(--primary-blue);
             box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
-            background: rgba(15, 23, 42, 0.8);
         }
 
         .input-wrapper input:focus + i.prefix-icon {
@@ -158,22 +155,15 @@
             cursor: pointer;
             transition: all 0.2s;
             margin-top: 10px;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
 
         .login-btn:hover {
             background: var(--primary-hover);
             transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-        }
-
-        .login-btn:active {
-            transform: translateY(0);
         }
 
         .login-btn:disabled {
             background: #475569;
-            box-shadow: none;
             cursor: not-allowed;
         }
 
@@ -187,13 +177,6 @@
             display: none;
             text-align: center;
             border: 1px solid rgba(239, 68, 68, 0.2);
-            animation: shake 0.4s ease-in-out;
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
         }
     </style>
 </head>
@@ -235,4 +218,56 @@
 
 <script>
     const loginForm = document.getElementById('loginForm');
-    const eyeIcon = document.
+    const eyeIcon = document.getElementById('eyeIcon');
+    const passwordInput = document.getElementById('password');
+    const errorMsg = document.getElementById('errorMessage');
+    const btn = document.getElementById('submitBtn');
+
+    // 1. 切换密码可见性逻辑
+    eyeIcon.addEventListener('click', () => {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        eyeIcon.classList.toggle('fa-eye');
+        eyeIcon.classList.toggle('fa-eye-slash');
+    });
+
+    // 2. 登录逻辑处理
+    loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const user = document.getElementById('username').value;
+        const pass = document.getElementById('password').value;
+
+        // UI 反馈
+        btn.disabled = true;
+        btn.innerText = '正在验证...';
+        errorMsg.style.display = 'none';
+
+        // 模拟网络请求延迟
+        setTimeout(() => {
+            if (user === 'admin' && pass === '123456') {
+                // 存储认证状态
+                localStorage.setItem('mws_auth_status', 'authorized');
+                localStorage.setItem('login_time', Date.now());
+                
+                // 登录成功跳转
+                window.location.href = 'admin-console.html';
+            } else {
+                // 登录失败处理
+                errorMsg.style.display = 'block';
+                btn.disabled = false;
+                btn.innerText = '登 录 系 统';
+                
+                // 触发抖动动画
+                const card = document.querySelector('.login-card');
+                card.style.animation = 'none';
+                // 强制重绘触发动画
+                void card.offsetWidth; 
+                card.style.animation = 'shake 0.4s ease-in-out';
+            }
+        }, 600);
+    });
+</script>
+
+</body>
+</html>
