@@ -207,12 +207,20 @@ app.post('/api/messages/send', async (req, res) => {
 });
 
 // ==========================================
+// 📄 页面路由 (明确指定 story.html 路径)
+// ==========================================
+app.get('/story.html', (req, res) => {
+    res.sendFile(__dirname + '/story.html');
+});
+
+// ==========================================
 // 🚀 启动监听
 // ==========================================
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
     console.log(`🚀 M.W.S 系统在线 (认证增强版) | 端口: ${PORT}`);
 });
+
 
 
 
