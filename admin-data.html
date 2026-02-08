@@ -82,13 +82,21 @@
     </main>
 
     <script>
-        // --- 鉴权门禁 ---
+        // --- 核心修改：统一鉴权门禁 ---
         (function checkAuth() {
-            const token = localStorage.getItem('mws_admin_token');
-            if (!token) window.location.href = 'login.html';
+            // 1. 修改变量名：从 mws_admin_token 改为 mws_auth_status
+            const authStatus = localStorage.getItem('mws_auth_status');
+            const loginTime = localStorage.getItem('login_time');
+            const maxAge = 24 * 60 * 60 * 1000; 
+
+            // 2. 修改逻辑：检查这把“钥匙”是否存在且未过期
+            if (authStatus !== 'true' || !loginTime || (Date.now() - parseInt(loginTime) > maxAge)) {
+                // 3. 修改跳转：确保跳回到正确的管理员登录页 admin-login.html
+                window.location.replace('admin-login.html'); 
+            }
         })();
 
-        // --- 视图切换 ---
+        // --- 以下所有视图切换和数据拉取逻辑保持不动 ---
         function switchTab(tab) {
             document.querySelectorAll('.data-view').forEach(v => v.classList.add('hidden'));
             document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
@@ -98,8 +106,8 @@
             if(tab === 'crm') fetchUsers();
         }
 
-        // --- 核心：拉取并渲染订单 ---
         async function fetchOrders() {
+            // 原有逻辑...
             const res = await fetch('/api/orders');
             const data = await res.json();
             document.getElementById('order-count').innerText = data.length;
@@ -134,18 +142,14 @@
             `).join('');
         }
 
-        // --- 核心：拉取并渲染会员资料 ---
         async function fetchUsers() {
+            // 原有逻辑...
             const res = await fetch('/api/users');
             const data = await res.json();
-            
-            // 计算数据看板
             const totalSpent = data.reduce((sum, u) => sum + (u.total_spent || 0), 0);
             const avgAge = data.length ? Math.round(data.reduce((sum, u) => sum + (u.age || 0), 0) / data.length) : 0;
-            
             document.getElementById('total-gmv').innerText = `¥${totalSpent.toLocaleString()}`;
             document.getElementById('avg-age').innerText = avgAge;
-
             document.getElementById('user-grid').innerHTML = data.map(u => `
                 <div class="p-6 border border-zinc-100 rounded-2xl hover:border-black transition">
                     <div class="text-[10px] font-black text-zinc-300 mb-4 uppercase">User Archive #${u.id}</div>
@@ -162,4 +166,5 @@
         window.onload = () => fetchOrders();
     </script>
 </body>
+
 </html>
