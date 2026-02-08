@@ -9,191 +9,155 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400&family=Inter:wght@200;300&display=swap');
 
-        :root {
-            --mws-black: #000000;
-            --mws-white: #ffffff;
-            --mws-gray: #f2f2f2;
-        }
-
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: var(--mws-white); 
-            color: var(--mws-black);
-            overflow: hidden;
+            background-color: #ffffff; 
+            color: #000000;
             height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-
-        /* 背景艺术效果：极淡的装饰线条 */
-        .bg-line {
-            position: absolute;
-            background: #000;
-            opacity: 0.03;
-            z-index: 0;
+            overflow: hidden;
         }
 
         .login-card {
             width: 100%;
-            max-width: 450px;
-            padding: 80px 60px;
+            max-width: 420px;
+            padding: 80px 40px;
             background: #fff;
-            position: relative;
-            z-index: 10;
             text-align: center;
+            position: relative;
         }
 
-        .logo-area {
+        .logo-text {
             font-family: 'Montserrat', sans-serif;
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 200;
             letter-spacing: 0.8em;
             text-transform: uppercase;
             margin-bottom: 60px;
-            margin-left: 0.8em;
         }
 
-        .input-group {
-            position: relative;
+        .input-item {
             margin-bottom: 40px;
             text-align: left;
         }
 
-        .input-group label {
+        .input-item label {
             font-size: 9px;
             font-weight: 700;
             letter-spacing: 0.2em;
             text-transform: uppercase;
-            color: #ccc;
+            color: #cccccc;
             display: block;
-            margin-bottom: 10px;
-            margin-left: 2px;
+            margin-bottom: 8px;
         }
 
         .mws-input {
             width: 100%;
             border: none;
-            border-bottom: 1px solid #e5e5e5;
-            padding: 12px 2px;
+            border-bottom: 1px solid #eeeeee;
+            padding: 10px 0;
             font-size: 13px;
             font-weight: 300;
-            letter-spacing: 0.1em;
             outline: none;
-            transition: border-color 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            transition: 0.4s;
         }
 
         .mws-input:focus {
-            border-color: var(--mws-black);
+            border-bottom-color: #000000;
         }
 
-        .btn-login {
+        .btn-verify {
             width: 100%;
-            background: var(--mws-black);
-            color: var(--mws-white);
-            padding: 20px;
-            font-size: 11px;
-            font-weight: 400;
-            letter-spacing: 0.5em;
-            text-transform: uppercase;
-            margin-top: 30px;
-            transition: all 0.4s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-login:hover {
-            opacity: 0.8;
-            letter-spacing: 0.6em;
-        }
-
-        .back-home {
-            margin-top: 40px;
+            background: #000000;
+            color: #ffffff;
+            padding: 18px;
             font-size: 10px;
-            letter-spacing: 0.2em;
+            font-weight: 400;
+            letter-spacing: 0.4em;
             text-transform: uppercase;
-            color: #aaa;
-            text-decoration: none;
-            display: inline-block;
+            margin-top: 20px;
             transition: 0.3s;
         }
 
-        .back-home:hover {
-            color: #000;
+        .btn-verify:hover {
+            letter-spacing: 0.5em;
+            opacity: 0.8;
         }
 
-        /* 响应式适配 */
-        @media (max-width: 640px) {
-            .login-card { padding: 60px 30px; }
+        .error-msg {
+            font-size: 10px;
+            color: #ff0000;
+            margin-top: 20px;
+            letter-spacing: 0.1em;
+            display: none;
         }
     </style>
 </head>
 <body>
 
-    <div class="bg-line w-[1px] h-full left-[20%]"></div>
-    <div class="bg-line w-full h-[1px] top-[40%]"></div>
-
     <main class="login-card animate__animated animate__fadeIn">
-        <div class="logo-area">MWS Studio</div>
+        <div class="logo-text">MWS STUDIO</div>
 
-        <div class="space-y-2">
-            <div class="input-group">
-                <label>Administrator / 账号</label>
-                <input type="text" id="admin-user" class="mws-input" placeholder="USERNAME" autocomplete="off">
-            </div>
-            
-            <div class="input-group">
-                <label>Security Key / 密钥</label>
-                <input type="password" id="admin-pass" class="mws-input" placeholder="PASSWORD">
-            </div>
-
-            <button onclick="handleAdminLogin()" class="btn-login">
-                Verify & Enter
-            </button>
+        <div class="input-item">
+            <label>Administrator / 管理员</label>
+            <input type="text" id="admin-account" class="mws-input" placeholder="EMAIL / ACCOUNT" autocomplete="off">
         </div>
 
-        <a href="index.html" class="back-home">← Back to Archive / 返回陈列馆</a>
+        <div class="input-item">
+            <label>Security Key / 凭证</label>
+            <input type="password" id="admin-password" class="mws-input" placeholder="PASSWORD">
+        </div>
+
+        <button onclick="handleAdminLogin()" class="btn-verify">Verify & Enter</button>
+        
+        <div id="login-error" class="error-msg">ACCESS DENIED / 认证失败</div>
+
+        <a href="index.html" class="block mt-12 text-[9px] text-zinc-300 uppercase tracking-widest hover:text-black transition">← Return / 返回</a>
     </main>
 
     <script>
-        // 保持你原有的逻辑，仅优化交互反馈
         async function handleAdminLogin() {
-            const user = document.getElementById('admin-user').value;
-            const pass = document.getElementById('admin-pass').value;
+            // 精准获取页面上的值
+            const emailValue = document.getElementById('admin-account').value.trim();
+            const passValue = document.getElementById('admin-password').value;
+            const errorDiv = document.getElementById('login-error');
 
-            if (!user || !pass) {
+            if (!emailValue || !passValue) {
                 alert("请填写完整的管理凭证");
                 return;
             }
 
-            // 这里对接你原本的 server.js 登录逻辑
             try {
+                // 调用你现有的 server.js 接口
                 const res = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: user, pass: pass })
+                    body: JSON.stringify({ 
+                        email: emailValue, 
+                        pass: passValue 
+                    })
                 });
-                
+
                 const data = await res.json();
-                
+
                 if (data.success && data.user.role === 'admin') {
-                    // 存储管理员状态
+                    // 存储管理员信息
                     localStorage.setItem('mws_user', JSON.stringify(data.user));
-                    // 成功动效
-                    document.querySelector('.login-card').classList.add('animate__fadeOutUp');
-                    setTimeout(() => {
-                        window.location.href = 'admin-console.html'; 
-                    }, 500);
+                    // 成功后平滑跳转
+                    window.location.href = 'admin-console.html';
                 } else {
-                    alert("权限不足或密码错误 / ACCESS DENIED");
+                    errorDiv.style.display = 'block';
+                    setTimeout(() => { errorDiv.style.display = 'none'; }, 3000);
                 }
             } catch (err) {
                 console.error("认证异常", err);
-                alert("系统连接异常，请检查后端状态");
+                alert("连接服务器失败，请检查网络或后端运行状态");
             }
         }
 
-        // 监听回车
+        // 监听回车键
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') handleAdminLogin();
         });
