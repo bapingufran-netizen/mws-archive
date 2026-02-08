@@ -3,164 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MWS ARCHIVE | 管理员认证</title>
+    <title>MWS STUDIO | 认证中心</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400&family=Inter:wght@200;300&display=swap');
-
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: #ffffff; 
-            color: #000000;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        .login-card {
-            width: 100%;
-            max-width: 420px;
-            padding: 80px 40px;
-            background: #fff;
-            text-align: center;
-            position: relative;
-        }
-
-        .logo-text {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 18px;
-            font-weight: 200;
-            letter-spacing: 0.8em;
-            text-transform: uppercase;
-            margin-bottom: 60px;
-        }
-
-        .input-item {
-            margin-bottom: 40px;
-            text-align: left;
-        }
-
-        .input-item label {
-            font-size: 9px;
-            font-weight: 700;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            color: #cccccc;
-            display: block;
-            margin-bottom: 8px;
-        }
-
-        .mws-input {
-            width: 100%;
-            border: none;
-            border-bottom: 1px solid #eeeeee;
-            padding: 10px 0;
-            font-size: 13px;
-            font-weight: 300;
-            outline: none;
-            transition: 0.4s;
-        }
-
-        .mws-input:focus {
-            border-bottom-color: #000000;
-        }
-
-        .btn-verify {
-            width: 100%;
-            background: #000000;
-            color: #ffffff;
-            padding: 18px;
-            font-size: 10px;
-            font-weight: 400;
-            letter-spacing: 0.4em;
-            text-transform: uppercase;
-            margin-top: 20px;
-            transition: 0.3s;
-        }
-
-        .btn-verify:hover {
-            letter-spacing: 0.5em;
-            opacity: 0.8;
-        }
-
-        .error-msg {
-            font-size: 10px;
-            color: #ff0000;
-            margin-top: 20px;
-            letter-spacing: 0.1em;
-            display: none;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@200;400&family=Inter:wght@200;400&display=swap');
+        body { font-family: 'Inter', sans-serif; background: #fff; color: #000; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .login-card { width: 100%; max-width: 420px; padding: 60px 40px; text-align: center; }
+        .logo-text { font-family: 'Montserrat', sans-serif; font-size: 18px; font-weight: 200; letter-spacing: 0.8em; text-transform: uppercase; margin-bottom: 60px; }
+        .input-group { margin-bottom: 35px; text-align: left; }
+        .input-group label { font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #ccc; display: block; margin-bottom: 8px; }
+        .mws-input { width: 100%; border: none; border-bottom: 1px solid #eee; padding: 12px 0; font-size: 13px; font-weight: 300; outline: none; transition: 0.4s; }
+        .mws-input:focus { border-bottom-color: #000; }
+        .btn-verify { width: 100%; background: #000; color: #fff; padding: 18px; font-size: 10px; font-weight: 400; letter-spacing: 0.4em; text-transform: uppercase; margin-top: 20px; transition: 0.3s; }
+        .btn-verify:hover { letter-spacing: 0.5em; opacity: 0.8; }
+        #error-hint { font-size: 10px; color: #ff0000; margin-top: 20px; letter-spacing: 0.1em; visibility: hidden; }
     </style>
 </head>
 <body>
-
     <main class="login-card animate__animated animate__fadeIn">
         <div class="logo-text">MWS STUDIO</div>
-
-        <div class="input-item">
+        <div class="input-group">
             <label>Administrator / 管理员</label>
             <input type="text" id="admin-account" class="mws-input" placeholder="EMAIL / ACCOUNT" autocomplete="off">
         </div>
-
-        <div class="input-item">
+        <div class="input-group">
             <label>Security Key / 凭证</label>
             <input type="password" id="admin-password" class="mws-input" placeholder="PASSWORD">
         </div>
-
-        <button onclick="handleAdminLogin()" class="btn-verify">Verify & Enter</button>
-        
-        <div id="login-error" class="error-msg">ACCESS DENIED / 认证失败</div>
-
+        <button id="submit-btn" onclick="handleAdminLogin()" class="btn-verify">Verify & Enter</button>
+        <div id="error-hint">ACCESS DENIED / 认证失败</div>
         <a href="index.html" class="block mt-12 text-[9px] text-zinc-300 uppercase tracking-widest hover:text-black transition">← Return / 返回</a>
     </main>
 
     <script>
         async function handleAdminLogin() {
-            // 精准获取页面上的值
-            const emailValue = document.getElementById('admin-account').value.trim();
-            const passValue = document.getElementById('admin-password').value;
-            const errorDiv = document.getElementById('login-error');
+            const btn = document.getElementById('submit-btn');
+            const account = document.getElementById('admin-account').value.trim();
+            const password = document.getElementById('admin-password').value;
+            const errorHint = document.getElementById('error-hint');
 
-            if (!emailValue || !passValue) {
+            if (!account || !password) {
                 alert("请填写完整的管理凭证");
                 return;
             }
 
+            btn.innerText = "VERIFYING...";
+            errorHint.style.visibility = "hidden";
+
             try {
-                // 调用你现有的 server.js 接口
+                // 核心：这里的 email 字段必须对应后端接收的字段
                 const res = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        email: emailValue, 
-                        pass: passValue 
-                    })
+                    body: JSON.stringify({ email: account, pass: password })
                 });
-
                 const data = await res.json();
 
-                if (data.success && data.user.role === 'admin') {
-                    // 存储管理员信息
+                // 角色与成功双重验证
+                if (data.success && data.user && data.user.role === 'admin') {
                     localStorage.setItem('mws_user', JSON.stringify(data.user));
-                    // 成功后平滑跳转
                     window.location.href = 'admin-console.html';
                 } else {
-                    errorDiv.style.display = 'block';
-                    setTimeout(() => { errorDiv.style.display = 'none'; }, 3000);
+                    btn.innerText = "VERIFY & ENTER";
+                    errorHint.style.visibility = "visible";
+                    // 3秒后自动隐藏错误提示
+                    setTimeout(() => { errorHint.style.visibility = "hidden"; }, 3000);
                 }
             } catch (err) {
-                console.error("认证异常", err);
-                alert("连接服务器失败，请检查网络或后端运行状态");
+                console.error("Auth Error:", err);
+                alert("连接服务器失败，请检查网络或后端状态");
+                btn.innerText = "VERIFY & ENTER";
             }
         }
 
-        // 监听回车键
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') handleAdminLogin();
-        });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleAdminLogin(); });
     </script>
 </body>
 </html>
