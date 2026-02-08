@@ -94,16 +94,17 @@
 
                 const data = await res.json();
                 
-                // 登录成功逻辑（保留原有动画效果）
-                if (data.success && data.user && data.user.role === 'admin') {
+                // ✅ 唯一调整：严格判断data存在且success为true，杜绝误跳转
+                if (typeof data === 'object' && data !== null && data.success === true && data.user && data.user.role === 'admin') {
                     localStorage.setItem('mws_user', JSON.stringify(data.user));
                     document.querySelector('.login-card').classList.add('animate__animated', 'animate__fadeOutUp');
                     setTimeout(() => {
                         window.location.href = 'admin-console.html'; 
                     }, 500);
                 } else {
-                    // 显示后端返回的具体错误信息
-                    showError(data.msg || "权限不足或密码错误 / ACCESS DENIED");
+                    // 显示后端返回的具体错误信息（兼容data为null/undefined的情况）
+                    const errorMsg = (data && data.msg) || "权限不足或密码错误 / ACCESS DENIED";
+                    showError(errorMsg);
                     // 重置按钮状态
                     resetLoginBtn();
                 }
