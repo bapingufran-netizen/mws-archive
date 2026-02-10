@@ -3,6 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <title>M.W.S | 叙事志档案</title>
+
+    <script>
+        (function() {
+            if (!localStorage.getItem('login_time')) {
+                window.location.replace('admin-login.html');
+            }
+        })();
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
@@ -272,3 +281,4 @@
     </script>
 </body>
 </html>
+
