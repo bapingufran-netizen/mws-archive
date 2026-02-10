@@ -46,77 +46,71 @@
         <a href="index.html" class="back-home">← Back to Archive / 返回陈列馆</a>
     </main>
 
-    <script>
-        const loginBtn = document.getElementById('loginBtn');
-        const errorTip = document.getElementById('errorTip');
-        const userInput = document.getElementById('admin-user');
-        const passInput = document.getElementById('admin-pass');
+   <script>
+    const loginBtn = document.getElementById('loginBtn');
+    const errorTip = document.getElementById('errorTip');
+    const userInput = document.getElementById('admin-user');
+    const passInput = document.getElementById('admin-pass');
 
-        // 设置你想要的正确密钥
-        const CORRECT_USER = "admin";
-        const CORRECT_KEY = "mwsadmin123";
+    // 1. 确保这里的账号密码是你想要的
+    const CORRECT_USER = "admin";
+    const CORRECT_KEY = "mwsadmin123";
 
-        async function handleAdminLogin() {
-            const user = userInput.value.trim();
-            const password = passInput.value;
+    async function handleAdminLogin() {
+        const user = userInput.value.trim();
+        const password = passInput.value;
 
-            errorTip.textContent = '';
-            
-            // 1. 判空处理
-            if (!user || !password) {
-                errorTip.textContent = '请完整填写账号和密钥';
-                return;
-            }
-
-            // 2. 账号密码校验
-            if (user === CORRECT_USER && password === CORRECT_KEY) {
-                loginBtn.disabled = true;
-                loginBtn.textContent = 'Verifying...';
-
-                try {
-                    // 存储登录凭证到 LocalStorage
-                    const sessionData = {
-                        user: user,
-                        role: 'admin',
-                        timestamp: new Date().getTime()
-                    };
-                    localStorage.setItem('mws_user', JSON.stringify(sessionData));
-
-                    // 3. 执行跳转（尝试多种路径写法以确保成功）
-                    console.log("验证通过，正在跳转...");
-                    
-                    // 优先使用 replace，防止用户按返回键回到登录页
-                    window.location.replace('admin-console.html');
-                    
-                    // 兜底跳转方案：如果 replace 失败，300ms 后尝试 href
-                    setTimeout(() => {
-                        window.location.href = './admin-console.html';
-                    }, 300);
-
-                } catch (err) {
-                    console.error("Storage Error:", err);
-                    errorTip.textContent = '浏览器存储异常，请关闭隐私模式或检查 Cookie 设置';
-                    loginBtn.disabled = false;
-                }
-            } else {
-                // 校验失败反馈
-                errorTip.textContent = '账号或安全密钥错误，请重试';
-                passInput.value = '';
-                passInput.focus();
-            }
+        errorTip.textContent = '';
+        
+        if (!user || !password) {
+            errorTip.textContent = '请完整填写账号和密钥';
+            return;
         }
 
-        // 监听回车键
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !loginBtn.disabled) {
-                handleAdminLogin();
-            }
-        });
+        if (user === CORRECT_USER && password === CORRECT_KEY) {
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Verifying...';
 
-        // 自动聚焦密码框
-        window.onload = () => {
+            try {
+                // --- 【精准修复点】统一 Key 的命名 ---
+                // 为了兼容你后台页面的检查脚本，我们存入一个简单的 'true' 值
+                localStorage.setItem('mws_admin_token', 'true'); 
+                
+                // 同时保留你的用户信息记录（可选）
+                localStorage.setItem('mws_user', JSON.stringify({
+                    user: user,
+                    role: 'admin',
+                    timestamp: new Date().getTime()
+                }));
+
+                console.log("验证通过，正在跳转...");
+                
+                // 确保跳转到正确的文件名（请确认你的后台文件名是 admin-console.html 还是 admin-data.html）
+                window.location.replace('admin-console.html');
+
+            } catch (err) {
+                console.error("Storage Error:", err);
+                errorTip.textContent = '浏览器存储异常，请检查隐私模式';
+                loginBtn.disabled = false;
+            }
+        } else {
+            errorTip.textContent = '账号或安全密钥错误，请重试';
+            passInput.value = '';
             passInput.focus();
-        };
-    </script>
+        }
+    }
+
+    // 监听回车键
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !loginBtn.disabled) {
+            handleAdminLogin();
+        }
+    });
+
+    window.onload = () => {
+        passInput.focus();
+    };
+</script>
 </body>
 </html>
+
