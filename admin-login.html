@@ -52,7 +52,6 @@
     const userInput = document.getElementById('admin-user');
     const passInput = document.getElementById('admin-pass');
 
-    // 1. 设置正确的账号密码
     const CORRECT_USER = "admin";
     const CORRECT_KEY = "mwsadmin123";
 
@@ -72,10 +71,11 @@
             loginBtn.textContent = 'Verifying...';
 
             try {
-                // --- 【核心修复】同时写入两个可能的 Key，确保 100% 兼容后台拦截脚本 ---
-                localStorage.setItem('mws_admin_token', 'true');
-                localStorage.setItem('mws_auth_status', 'true'); 
+                // --- 【核心修复：对齐后台页面的所有检查项】 ---
+                localStorage.setItem('mws_auth_status', 'true'); // 必须叫这个名
+                localStorage.setItem('login_time', Date.now().toString()); // 必须存入当前时间
                 
+                // 存入用户信息备用
                 localStorage.setItem('mws_user', JSON.stringify({
                     user: user,
                     role: 'admin',
@@ -83,11 +83,6 @@
                 }));
 
                 console.log("验证通过，正在跳转...");
-                
-                /**
-                 * 注意：如果你 GitHub 仓库里的后台文件名是 admin-data.html
-                 * 请将下面的 'admin-console.html' 修改为 'admin-data.html'
-                 */
                 window.location.replace('admin-console.html');
 
             } catch (err) {
@@ -102,19 +97,18 @@
         }
     }
 
-    // 监听回车键提交
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !loginBtn.disabled) {
             handleAdminLogin();
         }
     });
 
-    // 自动聚焦
     window.onload = () => {
         passInput.focus();
     };
 </script>
 </body>
 </html>
+
 
 
