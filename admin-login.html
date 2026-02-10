@@ -46,13 +46,13 @@
         <a href="index.html" class="back-home">← Back to Archive / 返回陈列馆</a>
     </main>
 
-   <script>
+<script>
     const loginBtn = document.getElementById('loginBtn');
     const errorTip = document.getElementById('errorTip');
     const userInput = document.getElementById('admin-user');
     const passInput = document.getElementById('admin-pass');
 
-    // 1. 确保这里的账号密码是你想要的
+    // 1. 设置正确的账号密码
     const CORRECT_USER = "admin";
     const CORRECT_KEY = "mwsadmin123";
 
@@ -72,11 +72,10 @@
             loginBtn.textContent = 'Verifying...';
 
             try {
-                // --- 【精准修复点】统一 Key 的命名 ---
-                // 为了兼容你后台页面的检查脚本，我们存入一个简单的 'true' 值
-                localStorage.setItem('mws_admin_token', 'true'); 
+                // --- 【核心修复】同时写入两个可能的 Key，确保 100% 兼容后台拦截脚本 ---
+                localStorage.setItem('mws_admin_token', 'true');
+                localStorage.setItem('mws_auth_status', 'true'); 
                 
-                // 同时保留你的用户信息记录（可选）
                 localStorage.setItem('mws_user', JSON.stringify({
                     user: user,
                     role: 'admin',
@@ -85,7 +84,10 @@
 
                 console.log("验证通过，正在跳转...");
                 
-                // 确保跳转到正确的文件名（请确认你的后台文件名是 admin-console.html 还是 admin-data.html）
+                /**
+                 * 注意：如果你 GitHub 仓库里的后台文件名是 admin-data.html
+                 * 请将下面的 'admin-console.html' 修改为 'admin-data.html'
+                 */
                 window.location.replace('admin-console.html');
 
             } catch (err) {
@@ -100,17 +102,19 @@
         }
     }
 
-    // 监听回车键
+    // 监听回车键提交
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !loginBtn.disabled) {
             handleAdminLogin();
         }
     });
 
+    // 自动聚焦
     window.onload = () => {
         passInput.focus();
     };
 </script>
 </body>
 </html>
+
 
